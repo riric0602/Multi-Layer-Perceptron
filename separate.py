@@ -101,6 +101,20 @@ def plot_split_distribution(y_train, y_val):
     plt.show()
 
 
+def split_dataset(df: DataFrame):
+    # Convert dataframe into input and output
+    X = df.drop(columns=['Diagnosis']).values
+    y = df['Diagnosis'].values
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_scaled, y, test_size=0.2, random_state=42, stratify=y
+    )
+    return X_train, X_val, y_train, y_val
+
+
 if __name__ == "__main__":
     try:
         if not os.path.exists(DATA_FILE):
@@ -124,16 +138,7 @@ if __name__ == "__main__":
         plot_top_correlated_features(df)
         plot_pair_plot(df)
 
-        # Convert dataframe to Numpy with input and output
-        X = df.drop(columns=['Diagnosis']).values
-        y = df['Diagnosis'].values
-
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_scaled, y, test_size=0.2, random_state=42, stratify=y
-        )
+        X_train, X_val, y_train, y_val = split_dataset(df)
         plot_split_distribution(y_train, y_val)
 
     except Exception as e:
