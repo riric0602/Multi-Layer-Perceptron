@@ -18,6 +18,16 @@ COLUMN_NAMES = [
 ]
 
 
+def preprocess_and_split_data():
+    # Load and Preprocess data
+    df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
+    df = preprocess_dataset(df)
+
+    # Split into training and validation set
+    X_train, X_val, y_train, y_val = split_dataset(df)
+    return X_train, X_val, y_train, y_val
+
+
 def preprocess_dataset(df: DataFrame):
     df.drop(columns=['Id'], inplace=True, errors='ignore')
     df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1})
@@ -40,7 +50,13 @@ def plot_diagnosis_distribution(df: DataFrame):
 
 
 def plot_correlation_heatmap(df: DataFrame):
-    corr_matrix = df.corr()
+    # Select the columns to be used in the HeatMap Plot
+    middle_10_features = df.columns[12:22]
+    selected_columns = ['Diagnosis'] + list(middle_10_features)
+
+    # Create the correlation matrix
+    df_corr = df[selected_columns]
+    corr_matrix = df_corr.corr()
 
     fig = plt.figure(figsize=(12, 5))
     sns.heatmap(corr_matrix, cmap="coolwarm", annot=False)
@@ -126,15 +142,11 @@ if __name__ == "__main__":
         df = preprocess_dataset(df)
 
         # Visualize DataFrame on the terminal
-        print("\n🔹 First 5 samples of DataFrame:", df.head())
-
-        # Select the columns to be used in the HeatMap Plot
-        middle_10_features = df.columns[12:22]
-        selected_columns =  ['Diagnosis'] + list(middle_10_features)
+        print("\n🔹 First 5 samples of DataFrame: 🔹", df.head())
 
         # Dataset Visualization
         plot_diagnosis_distribution(df)
-        plot_correlation_heatmap(df[selected_columns])
+        plot_correlation_heatmap(df)
         plot_top_correlated_features(df)
         plot_pair_plot(df)
 
