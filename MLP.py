@@ -3,19 +3,21 @@ import numpy as np
 class MLP:
     def __init__(self, input_size):
         self.input_size = input_size
-        self.layers = []        # list of output sizes (neurons per layer)
-        self.activations = []   # activation function names
-        self.weights = []       # list of weight matrices
-        self.biases = []        # list of bias vectors
-        self.z_s = []  # pre-activation values (linear function)
-        self.activations = []  # activations (starts with input)
+        self.layers = []              # list of neuron counts per layer
+        self.activation_funcs = []    # activation function names per layer
+        self.weights = []              # weight matrices
+        self.biases = []               # bias vectors
 
+        # Will be filled during feedforward
+        self.z_s = []  # pre-activation values
+        self.a_s = []  # activation outputs
 
     def add_layer(self, num_neurons, activation='sigmoid'):
         input_dim = self.input_size if not self.layers else self.layers[-1]
         self.layers.append(num_neurons)
-        self.activations.append(activation)
+        self.activation_funcs.append(activation)
 
+        # Weight and bias initialization
         if activation in ['sigmoid', 'tanh']:
             # Xavier initialization
             limit = np.sqrt(1. / input_dim)
@@ -24,15 +26,13 @@ class MLP:
             # He initialization
             weight = np.random.randn(input_dim, num_neurons) * np.sqrt(2. / input_dim)
         else:
-            raise ValueError("Unsupported activation. You must choose between ['sigmoid', 'tanh', 'relu']")
+            raise ValueError("Unsupported activation: choose from ['sigmoid','tanh','relu']")
 
         bias = np.zeros((1, num_neurons))
-
         self.weights.append(weight)
         self.biases.append(bias)
 
-
-    def neuron_activation(self, x, activation='sigmoid'):
+    def neuron_activation(self, x, activation):
         if activation == 'sigmoid':
             return 1 / (1 + np.exp(-x))
         elif activation == 'tanh':
@@ -40,21 +40,7 @@ class MLP:
         elif activation == 'relu':
             return np.maximum(0, x)
         else:
-            raise ValueError("Unsupported activation. You must choose between ['sigmoid', 'tanh', 'relu']")
-
-
-    def feedforward(self, X):
-        self.z_s = []
-        self.activations = [X]
-
-        a = X
-        for w, b, act in zip(self.weights, self.biases, self.activations):
-            z = a @ w + b
-            a = self.neuron_activation(z, act)
-            self.z_s.append(z)
-            self.activations.append(a)
-        return a
-
+            raise ValueError("Unsupported activation.")
 
     def activation_derivative(self, z, activation):
         if activation == 'sigmoid':
@@ -65,37 +51,45 @@ class MLP:
         elif activation == 'relu':
             return (z > 0).astype(float)
         else:
-            raise ValueError(f"Unsupported activation: {activation}")
+            raise ValueError("Unsupported activation.")
 
+    def feedforward(self, X):
+        self.z_s = []
+        self.a_s = [X]
 
-    def backpropagation(self, X, y, lr):
+        a = X
+        for w, b, act_func in zip(self.weights, self.biases, self.activation_funcs):
+            z = np.dot(a, w) + b
+            a = self.neuron_activation(z, act_func)
+            self.z_s.append(z)
+            self.a_s.append(a)
+        return a
+
+    def backpropagation(self, y, learning_rate):
         m = y.shape[0]
-        output = self.activations[-1]
-        delta = (output - y)  # dL/dA for MSE
+        output = self.a_s[-1]
+        delta = (output - y)
 
         for i in reversed(range(len(self.layers))):
-            z = self.z_s[i]
-            a_prev = self.activations[i]
-            act = self.activations[i]
-
-            delta *= self.activation_derivative(z, act)
-
-            dw = a_prev.T @ delta / m
+            delta *= self.activation_derivative(self.z_s[i], self.activation_funcs[i])
+            dw = np.dot(self.a_s[i], delta) / m
             db = np.sum(delta, axis=0, keepdims=True) / m
 
-            self.weights[i] -= lr * dw
-            self.biases[i] -= lr * db
+            # Update weights and biases
+            self.weights[i] -= learning_rate * dw
+            self.biases[i] -= learning_rate * db
 
-            delta = delta @ self.weights[i].T
+            # Compute delta for previous layer (if not at input layer)
+            if i > 0:
+                delta = delta @ self.weights[i].T
 
-
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=1000, lr=0.01):
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=1000, learning_rate=0.01):
         for epoch in range(epochs):
             self.feedforward(X_train)
-            self.backpropagation(X_train, y_train, lr)
+            self.backpropagation(y_train, learning_rate)
 
             if epoch % 100 == 0:
-                train_loss = np.mean((self.activations[-1] - y_train) ** 2)
+                train_loss = np.mean((self.a_s[-1] - y_train) ** 2)
                 msg = f"Epoch {epoch}, Train Loss: {train_loss:.4f}"
 
                 if X_val is not None and y_val is not None:
