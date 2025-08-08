@@ -68,11 +68,12 @@ class MLP:
     def backpropagation(self, y, learning_rate):
         m = y.shape[0]
         output = self.a_s[-1]
-        delta = (output - y)
 
+        # Chain Rule Computation with derivatives
+        delta = (output - y)
         for i in reversed(range(len(self.layers))):
             delta *= self.activation_derivative(self.z_s[i], self.activation_funcs[i])
-            dw = np.dot(self.a_s[i], delta) / m
+            dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0, keepdims=True) / m
 
             # Update weights and biases
@@ -81,7 +82,7 @@ class MLP:
 
             # Compute delta for previous layer (if not at input layer)
             if i > 0:
-                delta = delta @ self.weights[i].T
+                delta = np.dot(delta, self.weights[i].T)
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=1000, learning_rate=0.01):
         for epoch in range(epochs):
