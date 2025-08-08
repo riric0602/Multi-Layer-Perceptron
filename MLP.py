@@ -28,7 +28,7 @@ class MLP:
         else:
             raise ValueError("Unsupported activation: choose from ['sigmoid','tanh','relu']")
 
-        bias = np.zeros((1, num_neurons))
+        bias = np.zeros(num_neurons)
         self.weights.append(weight)
         self.biases.append(bias)
 
@@ -74,7 +74,7 @@ class MLP:
         for i in reversed(range(len(self.layers))):
             delta *= self.activation_derivative(self.z_s[i], self.activation_funcs[i])
             dw = np.dot(self.a_s[i].T, delta) / m
-            db = np.sum(delta, axis=0, keepdims=True) / m
+            db = np.sum(delta, axis=0) / m
 
             # Update weights and biases
             self.weights[i] -= learning_rate * dw

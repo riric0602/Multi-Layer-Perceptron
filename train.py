@@ -1,18 +1,30 @@
+import numpy as np
+from MLP import MLP
 from separate import preprocess_and_split_data
-
-# Initialize weights matrices and biases vectors randomly
-# calculate z the weighted sum of weights and biases
-# activation function a(z) using sigmoid or relu
-# calculate the CHAIN RULE which is the sensitivity of C (cost) to the weights
-# Define cost function (f(w, b) = x)
-# Gradient Descent to minimize cost function -> weights
 
 if __name__ == "__main__":
     try:
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
 
+        # Make sure data is numpy arrays and floats
+        X_train = np.array(X_train, dtype=np.float32)
+        X_val = np.array(X_val, dtype=np.float32)
+        y_train = np.array(y_train, dtype=np.float32)
+        y_val = np.array(y_val, dtype=np.float32)
 
+        input_size = X_train.shape[1]  # number of features
+
+        # Initialize the model
+        model = MLP(input_size)
+
+        # Add 3 layers
+        model.add_layer(24, activation='relu')
+        model.add_layer(24, activation='relu')
+        model.add_layer(1, activation='sigmoid')
+
+        # Train the model
+        model.fit(X_train, y_train, X_val, y_val, epochs=1000, learning_rate=0.01)
 
     except Exception as e:
         print(f"Error: {e}")
