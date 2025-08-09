@@ -3,7 +3,7 @@ from MLP import MLP
 from separate import preprocess_and_split_data
 
 if __name__ == "__main__":
-    # try:
+    try:
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
         model.add_layer(1, activation='sigmoid')
 
     # Train the model
-        model.fit(X_train, y_train, X_val, y_val, epochs=100, learning_rate=0.01)
+        model.fit(X_train, y_train, X_val, y_val, epochs=600, learning_rate=0.05)
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
