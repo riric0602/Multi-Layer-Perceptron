@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class MLP:
     def __init__(self, input_size):
@@ -66,6 +67,7 @@ class MLP:
         return a
 
     def backpropagation(self, y, learning_rate):
+        y = y.reshape(-1, 1)
         m = y.shape[0]
         output = self.a_s[-1]
 
@@ -84,18 +86,47 @@ class MLP:
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T)
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=1000, learning_rate=0.01):
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
+        train_losses = []
+        train_accuracies = []
+        val_losses = []
+
         for epoch in range(epochs):
             self.feedforward(X_train)
             self.backpropagation(y_train, learning_rate)
 
-            if epoch % 100 == 0:
-                train_loss = np.mean((self.a_s[-1] - y_train) ** 2)
-                msg = f"Epoch {epoch}, Train Loss: {train_loss:.4f}"
+            # Compute training loss and accuracy
+            train_loss = np.mean((self.a_s[-1] - y_train) ** 2)
+            train_losses.append(train_loss)  # <-- you forgot this line!
 
-                if X_val is not None and y_val is not None:
-                    val_output = self.feedforward(X_val)
-                    val_loss = np.mean((val_output - y_val) ** 2)
-                    msg += f", Val Loss: {val_loss:.4f}"
+            train_output = self.a_s[-1]
+            train_labels = (train_output >= 0.5).astype(int)
+            train_accuracy = np.mean(train_labels == y_train)
+            train_accuracies.append(train_accuracy)
 
-                print(msg)
+            if X_val is not None and y_val is not None:
+                val_output = self.feedforward(X_val)
+                val_loss = np.mean((val_output - y_val) ** 2)
+                val_losses.append(val_loss)
+
+        # ---- Plot Loss ----
+        plt.figure(figsize=(12, 5))
+
+        plt.subplot(1, 2, 1)
+        plt.plot(train_losses, label='Train Loss')
+        if val_losses:
+            plt.plot(val_losses, label='Val Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Loss Evolution')
+        plt.legend()
+
+        # ---- Plot Accuracy ----
+        plt.subplot(1, 2, 2)
+        plt.plot(train_accuracies, label='Train Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title('Training Accuracy')
+        plt.legend()
+
+        plt.show()
