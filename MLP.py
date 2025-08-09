@@ -86,36 +86,20 @@ class MLP:
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T)
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001, batch_size=None):
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
         train_losses = []
         train_accuracies = []
         val_losses = []
         val_accuracies = []
 
-        # Ensure y shapes are (n_samples, 1)
         y_train = y_train.reshape(-1, 1)
         if y_val is not None:
             y_val = y_val.reshape(-1, 1)
 
-        n_samples = X_train.shape[0]
-        indices = np.arange(n_samples)
-
         for epoch in range(epochs):
-            if batch_size is None:
-                # Full batch gradient descent
-                self.feedforward(X_train)
-                self.backpropagation(y_train, learning_rate)
-            else:
-                # Mini-batch gradient descent
-                np.random.shuffle(indices)
-                for start in range(0, n_samples, batch_size):
-                    end = start + batch_size
-                    batch_idx = indices[start:end]
-                    X_batch = X_train[batch_idx]
-                    y_batch = y_train[batch_idx]
-
-                    self.feedforward(X_batch)
-                    self.backpropagation(y_batch, learning_rate)
+            # Full batch gradient descent
+            self.feedforward(X_train)
+            self.backpropagation(y_train, learning_rate)
 
             # Training metrics
             output_train = self.feedforward(X_train)
@@ -135,19 +119,12 @@ class MLP:
                 val_accuracy = np.mean(val_preds == y_val)
                 val_accuracies.append(val_accuracy)
 
-            if epoch % 10 == 0 or epoch == epochs - 1:
-                msg = f"Epoch {epoch}: Train Loss={train_loss:.4f}, Train Acc={train_accuracy:.4f}"
-                if val_losses:
-                    msg += f", Val Loss={val_losses[-1]:.4f}, Val Acc={val_accuracies[-1]:.4f}"
-                print(msg)
-
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 
 
 # Utility functions :
 
 def plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies):
-    # Plotting results
     plt.figure(figsize=(14, 5))
 
     plt.subplot(1, 2, 1)
