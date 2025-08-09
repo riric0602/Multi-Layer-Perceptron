@@ -23,8 +23,11 @@ if __name__ == "__main__":
         model.add_layer(24, activation='relu')
         model.add_layer(1, activation='sigmoid')
 
-    # Train the model
+        # Train the model
         model.fit(X_train, y_train, X_val, y_val, epochs=600, learning_rate=0.05)
+
+        # Save trained MLP model
+        model.save_model("cancer_detection.npz")
 
     except Exception as e:
         print(f"Error: {e}")
