@@ -6,8 +6,8 @@ from separate import preprocess_dataset, DATA_FILE, COLUMN_NAMES
 def load_model(filepath):
     data = np.load(filepath, allow_pickle=True)
 
-    weights = [data[f'w{i}'] for i in range(len([k for k in data.files if k.startswith('w')]))]
-    biases = [data[f'b{i}'] for i in range(len([k for k in data.files if k.startswith('b')]))]
+    weights = [data[f'weight{i}'] for i in range(len([k for k in data.files if k.startswith('w')]))]
+    biases = [data[f'bias{i}'] for i in range(len([k for k in data.files if k.startswith('b')]))]
 
     return weights, biases
 
@@ -40,17 +40,18 @@ if __name__ == "__main__":
 
         # Load and preprocess the dataset
         df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
-        y_true = df['Diagnosis'].values
-        X_predict = preprocess_dataset(df).values
+        processed_dataset = preprocess_dataset(df)
+        y_true = processed_dataset['Diagnosis'].values.reshape(-1, 1)
+        X_predict = processed_dataset.drop(columns=['Diagnosis']).values
 
         # Get raw predicted probabilities
-        probs = model.feedforward(X_predict).flatten()
+        probs = model.feedforward(X_predict)
 
         # Calculate and print binary cross-entropy loss
         print("y_true shape:", y_true.shape)
         print("probs shape:", probs.shape)
 
-        loss = binary_cross_entropy(y_true, probs)
+        loss = binary_cross_entropy(y_true.reshape(-1, 1), probs)
         print(f"Binary Cross-Entropy Loss: {loss:.4f}")
 
         # predictions = predict(model, X_predict)

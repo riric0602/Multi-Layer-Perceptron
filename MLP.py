@@ -122,8 +122,11 @@ class MLP:
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 
     def save_model(self, filepath):
-        np.savez(filepath, **{f'w{i}': w for i, w in enumerate(self.weights)},
-                 **{f'b{i}': b for i, b in enumerate(self.biases)})
+        np.savez(
+            filepath,
+            **{f'weight{i}': w for i, w in enumerate(self.weights)},
+            **{f'bias{i}': b for i, b in enumerate(self.biases)}
+        )
 
 
 # Utility functions :
