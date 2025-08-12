@@ -1,4 +1,5 @@
 import numpy as np
+import json
 import matplotlib.pyplot as plt
 
 class MLP:
@@ -122,17 +123,24 @@ class MLP:
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 
     def save_model(self, filepath):
-        np.savez(
-            filepath,
-            **{f'weight{i}': w for i, w in enumerate(self.weights)},
-            **{f'bias{i}': b for i, b in enumerate(self.biases)}
-        )
+        model_data = {
+            "weights": [w.tolist() for w in self.weights],
+            "biases": [b.tolist() for b in self.biases]
+        }
+
+        with open(filepath, "w") as f:
+            json.dump(model_data, f)
 
 
 # Utility functions :
 
+def close_on_key(event) -> None:
+    if event.key == 'escape':
+        plt.close(event.canvas.figure)
+
 def plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies):
-    plt.figure(figsize=(14, 5))
+    fig = plt.figure(figsize=(14, 5))
+    fig.canvas.mpl_connect('key_press_event', close_on_key)
 
     plt.subplot(1, 2, 1)
     plt.plot(train_losses, label='Train Loss')

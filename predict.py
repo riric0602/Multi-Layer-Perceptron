@@ -1,14 +1,18 @@
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+
 from MLP import MLP
 import pandas as pd
+import json
 from separate import preprocess_dataset, DATA_FILE, COLUMN_NAMES
 
+
 def load_model(filepath):
-    data = np.load(filepath, allow_pickle=True)
+    with open(filepath, "r") as f:
+        model_data = json.load(f)
 
-    weights = [data[f'weight{i}'] for i in range(len([k for k in data.files if k.startswith('w')]))]
-    biases = [data[f'bias{i}'] for i in range(len([k for k in data.files if k.startswith('b')]))]
-
+    weights = [np.array(w) for w in model_data["weights"]]
+    biases = [np.array(b) for b in model_data["biases"]]
     return weights, biases
 
 def binary_cross_entropy(y_true, y_pred):
@@ -25,40 +29,42 @@ def predict(model, X):
     return preds
 
 if __name__ == "__main__":
-    # try:
-        # Load weights and biases
-        weights, biases = load_model('cancer_detection.npz')
+    # Load weights and biases
+    weights, biases = load_model('cancer_detection.json')
 
-        # Create model instance with input size based on first layer weights shape
-        model = MLP(input_size=weights[0].shape[0])
+    # Create model instance with input size based on first layer weights shape
+    model = MLP(input_size=weights[0].shape[0])
 
-        # Assign loaded weights and biases to the model
-        model.weights = list(weights)
-        model.biases = list(biases)
+    # Assign loaded weights and biases to the model
+    model.weights = list(weights)
+    model.biases = list(biases)
+    model.activation_funcs = ['relu', 'relu', 'sigmoid']
 
-        print("Model loaded successfully")
+    print("Model loaded successfully")
 
-        # Load and preprocess the dataset
-        df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
-        processed_dataset = preprocess_dataset(df)
-        y_true = processed_dataset['Diagnosis'].values.reshape(-1, 1)
-        X_predict = processed_dataset.drop(columns=['Diagnosis']).values
+    # Load and preprocess the dataset
+    df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
+    dataset = preprocess_dataset(df)
 
-        # Get raw predicted probabilities
-        probs = model.feedforward(X_predict)
+    X_predict = dataset.drop(columns=['Diagnosis'])
+    y_true = dataset['Diagnosis'].values.reshape(-1, 1)
 
-        # Calculate and print binary cross-entropy loss
-        print("y_true shape:", y_true.shape)
-        print("probs shape:", probs.shape)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_predict)
 
-        loss = binary_cross_entropy(y_true.reshape(-1, 1), probs)
-        print(f"Binary Cross-Entropy Loss: {loss:.4f}")
+    # Get raw predicted probabilities
+    probs = model.feedforward(X_scaled)
 
-        # predictions = predict(model, X_predict)
-        #
-        # for i, pred in enumerate(predictions):
-        #     label = "Malignant" if pred == 1 else "Benign"
-        #     print(f"Sample {i}: {label}")
+    # Calculate and print binary cross-entropy loss
+    print("y_true shape:", y_true.shape)
+    print("probs shape:", probs.shape)
+    print(probs)
 
-    # except Exception as e:
-    #     print("Error:", e)
+    loss = binary_cross_entropy(y_true.reshape(-1, 1), probs)
+    print(f"Binary Cross-Entropy Loss: {loss:.4f}")
+
+    # predictions = predict(model, X_predict)
+    #
+    # for i, pred in enumerate(predictions):
+    #     label = "Malignant" if pred == 1 else "Benign"
+    #     print(f"Sample {i}: {label}")

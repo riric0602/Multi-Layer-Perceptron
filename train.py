@@ -27,7 +27,7 @@ if __name__ == "__main__":
         model.fit(X_train, y_train, X_val, y_val, epochs=600, learning_rate=0.05)
 
         # Save trained MLP model
-        model.save_model("cancer_detection.npz")
+        model.save_model("cancer_detection.json")
 
     except Exception as e:
         print(f"Error: {e}")
