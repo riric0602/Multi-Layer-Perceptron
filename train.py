@@ -3,7 +3,7 @@ from MLP import MLP
 from separate import preprocess_and_split_data
 
 if __name__ == "__main__":
-    try:
+    # try:
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
 
@@ -29,5 +29,5 @@ if __name__ == "__main__":
         # Save trained MLP model
         model.save_model("cancer_detection.json")
 
-    except Exception as e:
-        print(f"Error: {e}")
+    # except Exception as e:
+    #     print(f"Error: {e}")

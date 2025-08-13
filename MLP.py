@@ -41,6 +41,9 @@ class MLP:
             return np.tanh(x)
         elif activation == 'relu':
             return np.maximum(0, x)
+        elif activation == 'softmax':
+            exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+            return exp_x / np.sum(exp_x, axis=1, keepdims=True)
         else:
             raise ValueError("Unsupported activation.")
 
@@ -52,6 +55,8 @@ class MLP:
             return 1 - np.tanh(z) ** 2
         elif activation == 'relu':
             return (z > 0).astype(float)
+        elif activation == 'softmax':
+            raise ValueError("Softmax derivative is handled implicitly with cross-entropy.")
         else:
             raise ValueError("Unsupported activation.")
 
@@ -72,20 +77,21 @@ class MLP:
         m = y.shape[0]
         output = self.a_s[-1]
 
+        # Softmax implementation on the output layer
+        if self.activation_funcs[-1] == 'softmax':
+            self.activation_funcs[-1] = 'softmax'
+
         # Chain Rule Computation with derivatives
-        delta = (output - y)
+        delta = output - y
         for i in reversed(range(len(self.layers))):
-            delta *= self.activation_derivative(self.z_s[i], self.activation_funcs[i])
             dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0) / m
-
-            # Update weights and biases
             self.weights[i] -= learning_rate * dw
             self.biases[i] -= learning_rate * db
 
-            # Compute delta for previous layer (if not at input layer)
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T)
+                delta *= self.activation_derivative(self.z_s[i - 1], self.activation_funcs[i - 1])
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
         train_losses = []
