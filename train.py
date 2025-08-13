@@ -1,9 +1,45 @@
 import numpy as np
 from MLP import MLP
+import argparse
 from separate import preprocess_and_split_data
 
+# def parse_args():
+#     parser = argparse.ArgumentParser(
+#         description="Train a Multi-Layer Perceptron model."
+#     )
+#
+#     parser.add_argument(
+#         "--l",
+#         '--add_layers',
+#         type=str,
+#         nargs="+",
+#         default='24 24',
+#         help="Layers' sizes to add."
+#     )
+#     parser.add_argument(
+#         '-a',
+#         '--activations',
+#         type=str,
+#         default=0.001,
+#         help="Learning rate for training."
+#     )
+#     parser.add_argument(
+#         '-lr',
+#         '--learning_rate',
+#         type=int,
+#         default=0.001,
+#         help="Learning rate for training."
+#     )
+#     parser.add_argument(
+#         'e',
+#         '--epochs',
+#         type=int,
+#         default=100,
+#         help="Number of epochs to train."
+#     )
+
 if __name__ == "__main__":
-    # try:
+    try:
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
 
@@ -29,5 +65,5 @@ if __name__ == "__main__":
         # Save trained MLP model
         model.save_model("cancer_detection.json")
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
