@@ -127,11 +127,19 @@ class MLP:
 
             if X_val is not None and y_val is not None:
                 output_val = self.feedforward(X_val)
-                val_loss = np.mean((output_val - y_val) ** 2)
+                y_prob = output_val[:, 1]
+
+                # extract positive class labels from one-hot encoding
+                y_true = y_val[:, 1]
+                epsilon = 1e-12
+
+                # Log loss / binary cross-entropy
+                val_loss = -np.mean(y_true * np.log(y_prob + epsilon) + (1 - y_true) * np.log(1 - y_prob + epsilon))
                 val_losses.append(val_loss)
 
-                val_preds = (output_val >= 0.5).astype(int)
-                val_accuracy = np.mean(val_preds == y_val)
+                # predictions
+                val_preds = (y_prob >= 0.5).astype(int)
+                val_accuracy = np.mean(val_preds == y_true)
                 val_accuracies.append(val_accuracy)
 
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)

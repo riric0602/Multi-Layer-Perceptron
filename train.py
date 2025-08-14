@@ -32,7 +32,7 @@ def get_parameters(params):
 
 
 if __name__ == "__main__":
-    try:
+    # try:
         # Get parameters from the command line
         params = parse_parameters()
         layers, activations, learning_rate, epochs = get_parameters(params)
@@ -59,6 +59,7 @@ if __name__ == "__main__":
 
         # Save trained MLP model
         model.save_model("cancer_detection.json")
+        print("Model 'cancer_detection.json' saved locally.")
 
-    except Exception as e:
-        print(f"Error: {e}")
+    # except Exception as e:
+    #     print(f"Error: {e}")
