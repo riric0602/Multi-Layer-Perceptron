@@ -13,7 +13,9 @@ def load_model(filepath):
 
     weights = [np.array(w) for w in model_data["weights"]]
     biases = [np.array(b) for b in model_data["biases"]]
-    return weights, biases
+    activations = [a for a in model_data["activations"]]
+
+    return weights, biases, activations
 
 def read_and_scale_data():
     # Load and preprocess the dataset
@@ -38,7 +40,7 @@ def binary_cross_entropy(y_true, y_pred):
 if __name__ == "__main__":
     try:
         # Load weights and biases
-        weights, biases = load_model('cancer_detection.json')
+        weights, biases, activations = load_model('cancer_detection.json')
 
         # Create model instance with input size based on first layer weights shape
         model = MLP(input_size=weights[0].shape[0])
@@ -46,14 +48,13 @@ if __name__ == "__main__":
         # Assign loaded weights and biases to the model
         model.weights = weights
         model.biases = biases
-        model.activation_funcs = ['relu', 'relu', 'sigmoid']
+        model.activation_funcs = activations
 
         print("Model loaded successfully !")
 
         X_scaled, y_true = read_and_scale_data()
         probs = model.feedforward(X_scaled)
-        y_pred = (probs >= 0.5).astype(int)
-
+        y_pred = np.argmax(probs, axis=1)
 
         # Compute metrics
         loss = binary_cross_entropy(y_true.reshape(-1, 1), probs)

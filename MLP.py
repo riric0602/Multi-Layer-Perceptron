@@ -117,11 +117,12 @@ class MLP:
 
             # Training metrics
             output_train = self.feedforward(X_train)
-            train_loss = np.mean((output_train - y_train) ** 2)
+            train_loss = -np.mean(np.sum(y_train * np.log(output_train + 1e-15), axis=1))
             train_losses.append(train_loss)
 
-            train_preds = (output_train >= 0.5).astype(int)
-            train_accuracy = np.mean(train_preds == y_train)
+            train_preds = np.argmax(output_train, axis=1)
+            y_true = np.argmax(y_train, axis=1)
+            train_accuracy = np.mean(train_preds == y_true)
             train_accuracies.append(train_accuracy)
 
             if X_val is not None and y_val is not None:
@@ -138,7 +139,8 @@ class MLP:
     def save_model(self, filepath):
         model_data = {
             "weights": [w.tolist() for w in self.weights],
-            "biases": [b.tolist() for b in self.biases]
+            "biases": [b.tolist() for b in self.biases],
+            "activations": [a for a in self.activation_funcs]
         }
 
         with open(filepath, "w") as f:
