@@ -101,6 +101,7 @@ class MLP:
         train_accuracies = []
         val_losses = []
         val_accuracies = []
+        epsilon = 1e-15
 
         # One-hot encode manually
         y_train = self.one_hot_encoder(y_train, 2)
@@ -117,30 +118,30 @@ class MLP:
 
             # Training metrics
             output_train = self.feedforward(X_train)
-            train_loss = -np.mean(np.sum(y_train * np.log(output_train + 1e-15), axis=1))
+            p = np.clip(output_train, epsilon, 1 - epsilon)
+
+            train_loss = -np.mean(np.sum(y_train * np.log(p), axis=1))
             train_losses.append(train_loss)
 
             train_preds = np.argmax(output_train, axis=1)
             y_true = np.argmax(y_train, axis=1)
-            train_accuracy = np.mean(train_preds == y_true)
-            train_accuracies.append(train_accuracy)
+            train_acc = np.mean(train_preds == y_true)
+            train_accuracies.append(train_acc)
 
             if X_val is not None and y_val is not None:
                 output_val = self.feedforward(X_val)
-                y_prob = output_val[:, 1]
+                p = np.clip(output_val, epsilon, 1 - epsilon)
 
-                # extract positive class labels from one-hot encoding
-                y_true = y_val[:, 1]
-                epsilon = 1e-12
-
-                # Log loss / binary cross-entropy
-                val_loss = -np.mean(y_true * np.log(y_prob + epsilon) + (1 - y_true) * np.log(1 - y_prob + epsilon))
+                val_loss = -np.mean(np.sum(y_val * np.log(p), axis=1))
                 val_losses.append(val_loss)
 
                 # predictions
-                val_preds = (y_prob >= 0.5).astype(int)
-                val_accuracy = np.mean(val_preds == y_true)
-                val_accuracies.append(val_accuracy)
+                val_preds = np.argmax(output_val, axis=1)
+                y_true = np.argmax(y_val, axis=1)
+                val_acc = np.mean(val_preds == y_true)
+                val_accuracies.append(val_acc)
+
+                print(f"Epoch: {epoch}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 

@@ -8,25 +8,28 @@ def parse_parameters():
         description="Train a Multi-Layer Perceptron model for binary classification of breast cancer."
     )
 
-    parser.add_argument("-l", '--add_layers', type=int, nargs="+", required=True, default=[24, 24], help="Layers' sizes to add.")
+    parser.add_argument("-l", '--add_layers', type=int, nargs="+", default=[24, 24], help="Layers' sizes to add.")
     parser.add_argument('-a', '--activations', type=str, nargs="+", help="Learning rate for training.")
-    parser.add_argument('-lr', '--learning_rate', type=float, required=True, default=0.001, help="Learning rate for training.")
-    parser.add_argument('-e', '--epochs', type=int, required=True, default=100, help="Number of epochs to train.")
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.05, help="Learning rate for training.")
+    parser.add_argument('-e', '--epochs', type=int, default=600, help="Number of epochs to train.")
 
     return parser.parse_args()
 
 def get_parameters(params):
     layers = params.add_layers
-    activations = [act.lower() for act in params.activations]
     learning_rate = params.learning_rate
     epochs = params.epochs
+    activations = [None] * len(layers)
 
-    if len(activations) != len(layers):
-        raise ValueError("Error: activation functions mismatch with number of layers.")
+    if params.activations is not None:
+        activations = [act.lower() for act in params.activations]
 
-    for act in activations:
-        if act not in {'relu', 'tanh', 'sigmoid'}:
-            raise ValueError("Error: activation function must be 'relu', 'tanh', or 'sigmoid'.")
+        if len(activations) != len(layers):
+            raise ValueError("Error: activation functions mismatch with number of layers.")
+
+        for act in activations:
+            if act not in {'relu', 'tanh', 'sigmoid'}:
+                raise ValueError("Error: activation function must be 'relu', 'tanh', or 'sigmoid'.")
 
     return layers, activations, learning_rate, epochs
 
@@ -52,7 +55,10 @@ if __name__ == "__main__":
         model = MLP(input_size)
 
         for layer, activation in zip(layers, activations):
-            model.add_layer(layer, activation=activation)
+            if activation:
+                model.add_layer(layer, activation=activation)
+            else:
+                model.add_layer(layer)
 
         # Train the model
         model.fit(X_train, y_train, X_val, y_val, epochs=epochs, learning_rate=learning_rate)
