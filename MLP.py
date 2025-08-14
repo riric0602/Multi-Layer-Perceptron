@@ -20,7 +20,7 @@ class MLP:
         self.activation_funcs.append(activation)
 
         # Weight and bias initialization
-        if activation in ['sigmoid', 'tanh']:
+        if activation in ['sigmoid', 'tanh', 'softmax']:
             # Xavier initialization
             limit = np.sqrt(1. / input_dim)
             weight = np.random.uniform(-limit, limit, (input_dim, num_neurons))
@@ -33,6 +33,12 @@ class MLP:
         bias = np.zeros(num_neurons)
         self.weights.append(weight)
         self.biases.append(bias)
+
+    def one_hot_encoder(self, y, num_classes):
+        y = y.astype(int).flatten()
+        one_hot = np.zeros((y.size, num_classes))
+        one_hot[np.arange(y.size), y] = 1
+        return one_hot
 
     def neuron_activation(self, x, activation):
         if activation == 'sigmoid':
@@ -73,13 +79,9 @@ class MLP:
         return a
 
     def backpropagation(self, y, learning_rate):
-        y = y.reshape(-1, 1)
+        # y = y.reshape(-1, 1)
         m = y.shape[0]
         output = self.a_s[-1]
-
-        # Softmax implementation on the output layer
-        if self.activation_funcs[-1] == 'softmax':
-            self.activation_funcs[-1] = 'softmax'
 
         # Chain Rule Computation with derivatives
         delta = output - y
@@ -91,7 +93,8 @@ class MLP:
 
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T)
-                delta *= self.activation_derivative(self.z_s[i - 1], self.activation_funcs[i - 1])
+                if self.activation_funcs[i - 1] != 'softmax':
+                    delta *= self.activation_derivative(self.z_s[i - 1], self.activation_funcs[i - 1])
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
         train_losses = []
@@ -99,9 +102,13 @@ class MLP:
         val_losses = []
         val_accuracies = []
 
-        y_train = y_train.reshape(-1, 1)
+        # One-hot encode manually
+        y_train = self.one_hot_encoder(y_train, 2)
         if y_val is not None:
-            y_val = y_val.reshape(-1, 1)
+            y_val = self.one_hot_encoder(y_val, 2)
+
+        # Add output layer containing 2 neurons
+        self.add_layer(2, activation='softmax')
 
         for epoch in range(epochs):
             # Full batch gradient descent
