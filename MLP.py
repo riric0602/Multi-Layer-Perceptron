@@ -11,6 +11,7 @@ class MLP:
         self.biases = []               # bias vectors
         self.z_s = []  # pre-activation values
         self.a_s = []  # activation outputs
+        np.random.seed(1)
 
     def add_layer(self, num_neurons, activation='sigmoid'):
         # Define input dimension of layer for initialization of weights / biases
@@ -47,14 +48,26 @@ class MLP:
         else:
             raise ValueError("Unsupported activation.")
 
-    def activation_derivative(self, z, activation):
+    # def activation_derivative(self, z, activation):
+    #     if activation == 'sigmoid':
+    #         sig = self.neuron_activation(z, 'sigmoid')
+    #         return sig * (1 - sig)
+    #     elif activation == 'tanh':
+    #         return 1 - np.tanh(z) ** 2
+    #     elif activation == 'relu':
+    #         return (z > 0).astype(float)
+    #     elif activation == 'softmax':
+    #         raise ValueError("Softmax derivative is handled implicitly with cross-entropy.")
+    #     else:
+    #         raise ValueError("Unsupported activation.")
+
+    def activation_derivative(self, a, activation):
         if activation == 'sigmoid':
-            sig = self.neuron_activation(z, 'sigmoid')
-            return sig * (1 - sig)
+            return a * (1 - a)
         elif activation == 'tanh':
-            return 1 - np.tanh(z) ** 2
+            return 1 - a ** 2
         elif activation == 'relu':
-            return (z > 0).astype(float)
+            return (a > 0).astype(float)
         elif activation == 'softmax':
             raise ValueError("Softmax derivative is handled implicitly with cross-entropy.")
         else:
@@ -64,31 +77,32 @@ class MLP:
         self.z_s = []
         self.a_s = [X]
 
+        a = X
         for w, b, act_func in zip(self.weights, self.biases, self.activation_funcs):
-            z = np.dot(X, w) + b
-            X = self.neuron_activation(z, act_func)
+            z = np.dot(a, w) + b
+            a = self.neuron_activation(z, act_func)
             self.z_s.append(z)
-            self.a_s.append(X)
-        return X
+            self.a_s.append(a)
+        return a
 
     def backpropagation(self, y, learning_rate):
+        num_layers = len(self.layers)
         m = y.shape[0]
-        X = self.a_s[-1]
+        X = self.a_s[-1] # [input, a1, a2, output] [sigmoid, sigmoid, softmax] [w1, w2, w3]
 
         # Chain Rule Computation with derivatives
         delta = X - y
-        for i in reversed(range(len(self.layers))):
+        for i in reversed(range(0, num_layers)):
             # Compute Weights / Biases Gradient Descent
             dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0) / m
 
+            if i > 1:
+                delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(self.a_s[i - 1], self.activation_funcs[i - 1])
+
             # Update weights and biases
             self.weights[i] -= learning_rate * dw
             self.biases[i] -= learning_rate * db
-
-            if i > 0:
-                delta = (delta @ self.weights[i].T) * self.activation_derivative(self.z_s[i - 1],
-                                                                                 self.activation_funcs[i - 1])
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
         train_losses = []
