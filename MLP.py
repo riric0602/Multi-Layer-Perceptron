@@ -79,7 +79,6 @@ class MLP:
         return a
 
     def backpropagation(self, y, learning_rate):
-        # y = y.reshape(-1, 1)
         m = y.shape[0]
         output = self.a_s[-1]
 
@@ -92,56 +91,48 @@ class MLP:
             self.biases[i] -= learning_rate * db
 
             if i > 0:
-                delta = np.dot(delta, self.weights[i].T)
-                if self.activation_funcs[i - 1] != 'softmax':
-                    delta *= self.activation_derivative(self.z_s[i - 1], self.activation_funcs[i - 1])
+                delta = (delta @ self.weights[i].T) * self.activation_derivative(self.z_s[i - 1],
+                                                                                 self.activation_funcs[i - 1])
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
         train_losses = []
         train_accuracies = []
         val_losses = []
         val_accuracies = []
-        epsilon = 1e-15
+
+        # X_train = (X_train - X_train.mean(axis=0)) / X_train.std(axis=0)
+        # X_val = (X_val - X_val.mean(axis=0)) / X_val.std(axis=0)
 
         # One-hot encode manually
-        y_train = self.one_hot_encoder(y_train, 2)
-        if y_val is not None:
-            y_val = self.one_hot_encoder(y_val, 2)
-
-        # Add output layer containing 2 neurons
-        self.add_layer(2, activation='softmax')
+        y_train_oh = self.one_hot_encoder(y_train, 2)
+        y_val_oh = self.one_hot_encoder(y_val, 2)
 
         for epoch in range(epochs):
             # Full batch gradient descent
             self.feedforward(X_train)
-            self.backpropagation(y_train, learning_rate)
+            self.backpropagation(y_train_oh, learning_rate)
 
             # Training metrics
             output_train = self.feedforward(X_train)
-            p = np.clip(output_train, epsilon, 1 - epsilon)
-
-            train_loss = -np.mean(np.sum(y_train * np.log(p), axis=1))
-            train_losses.append(train_loss)
+            train_loss = log_loss(y_train_oh, output_train)
 
             train_preds = np.argmax(output_train, axis=1)
-            y_true = np.argmax(y_train, axis=1)
-            train_acc = np.mean(train_preds == y_true)
+            train_acc = np.mean(train_preds == y_train)
+
+            train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
             if X_val is not None and y_val is not None:
                 output_val = self.feedforward(X_val)
-                p = np.clip(output_val, epsilon, 1 - epsilon)
+                val_loss = log_loss(y_val_oh, output_val)
 
-                val_loss = -np.mean(np.sum(y_val * np.log(p), axis=1))
-                val_losses.append(val_loss)
-
-                # predictions
                 val_preds = np.argmax(output_val, axis=1)
-                y_true = np.argmax(y_val, axis=1)
-                val_acc = np.mean(val_preds == y_true)
+                val_acc = np.mean(val_preds == y_val)
+
+                val_losses.append(val_loss)
                 val_accuracies.append(val_acc)
 
-                print(f"Epoch: {epoch}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
+                print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 
@@ -157,6 +148,11 @@ class MLP:
 
 
 # Utility functions :
+
+def log_loss(y_true, y_pred):
+    epsilon = 1e-15
+    p = np.clip(y_pred, epsilon, 1 - epsilon)
+    return -np.mean(np.sum(y_true * np.log(p), axis=1))
 
 def close_on_key(event) -> None:
     if event.key == 'escape':

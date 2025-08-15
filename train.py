@@ -60,6 +60,9 @@ if __name__ == "__main__":
             else:
                 model.add_layer(layer)
 
+        # Add output layer containing 2 neurons
+        model.add_layer(2, activation='softmax')
+
         # Train the model
         model.fit(X_train, y_train, X_val, y_val, epochs=epochs, learning_rate=learning_rate)
 
