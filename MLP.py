@@ -1,6 +1,6 @@
-import numpy as np
 import json
-import matplotlib.pyplot as plt
+import numpy as np
+from utils import one_hot_encoder, metrics, plot_loss_and_accuracy
 
 class MLP:
     def __init__(self, input_size):
@@ -9,17 +9,16 @@ class MLP:
         self.activation_funcs = []    # activation function names per layer
         self.weights = []              # weight matrices
         self.biases = []               # bias vectors
-
-        # Will be filled during feedforward
         self.z_s = []  # pre-activation values
         self.a_s = []  # activation outputs
 
     def add_layer(self, num_neurons, activation='sigmoid'):
+        # Define input dimension of layer for initialization of weights / biases
         input_dim = self.input_size if not self.layers else self.layers[-1]
-        self.layers.append(num_neurons)
-        self.activation_funcs.append(activation)
 
         # Weight and bias initialization
+        bias = np.zeros(num_neurons)
+
         if activation in ['sigmoid', 'tanh', 'softmax']:
             # Xavier initialization
             limit = np.sqrt(1. / input_dim)
@@ -30,26 +29,21 @@ class MLP:
         else:
             raise ValueError("Unsupported activation: choose from ['sigmoid','tanh','relu']")
 
-        bias = np.zeros(num_neurons)
+        self.layers.append(num_neurons)
+        self.activation_funcs.append(activation)
         self.weights.append(weight)
         self.biases.append(bias)
 
-    def one_hot_encoder(self, y, num_classes):
-        y = y.astype(int).flatten()
-        one_hot = np.zeros((y.size, num_classes))
-        one_hot[np.arange(y.size), y] = 1
-        return one_hot
-
-    def neuron_activation(self, x, activation):
+    def neuron_activation(self, z, activation):
         if activation == 'sigmoid':
-            return 1 / (1 + np.exp(-x))
+            return 1 / (1 + np.exp(-z))
         elif activation == 'tanh':
-            return np.tanh(x)
+            return np.tanh(z)
         elif activation == 'relu':
-            return np.maximum(0, x)
+            return np.maximum(0, z)
         elif activation == 'softmax':
-            exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
-            return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+            exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))
+            return exp_z / np.sum(exp_z, axis=1, keepdims=True)
         else:
             raise ValueError("Unsupported activation.")
 
@@ -70,23 +64,25 @@ class MLP:
         self.z_s = []
         self.a_s = [X]
 
-        a = X
         for w, b, act_func in zip(self.weights, self.biases, self.activation_funcs):
-            z = np.dot(a, w) + b
-            a = self.neuron_activation(z, act_func)
+            z = np.dot(X, w) + b
+            X = self.neuron_activation(z, act_func)
             self.z_s.append(z)
-            self.a_s.append(a)
-        return a
+            self.a_s.append(X)
+        return X
 
     def backpropagation(self, y, learning_rate):
         m = y.shape[0]
-        output = self.a_s[-1]
+        X = self.a_s[-1]
 
         # Chain Rule Computation with derivatives
-        delta = output - y
+        delta = X - y
         for i in reversed(range(len(self.layers))):
+            # Compute Weights / Biases Gradient Descent
             dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0) / m
+
+            # Update weights and biases
             self.weights[i] -= learning_rate * dw
             self.biases[i] -= learning_rate * db
 
@@ -99,40 +95,22 @@ class MLP:
         train_accuracies = []
         val_losses = []
         val_accuracies = []
-
-        # X_train = (X_train - X_train.mean(axis=0)) / X_train.std(axis=0)
-        # X_val = (X_val - X_val.mean(axis=0)) / X_val.std(axis=0)
-
-        # One-hot encode manually
-        y_train_oh = self.one_hot_encoder(y_train, 2)
-        y_val_oh = self.one_hot_encoder(y_val, 2)
+        y_train_oh = one_hot_encoder(y_train, 2)
 
         for epoch in range(epochs):
-            # Full batch gradient descent
             self.feedforward(X_train)
             self.backpropagation(y_train_oh, learning_rate)
 
-            # Training metrics
-            output_train = self.feedforward(X_train)
-            train_loss = log_loss(y_train_oh, output_train)
-
-            train_preds = np.argmax(output_train, axis=1)
-            train_acc = np.mean(train_preds == y_train)
-
+            # Compute training and validation metrics
+            train_loss, train_acc = metrics(self, X_train, y_train)
             train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
-            if X_val is not None and y_val is not None:
-                output_val = self.feedforward(X_val)
-                val_loss = log_loss(y_val_oh, output_val)
+            val_loss, val_acc = metrics(self, X_val, y_val)
+            val_losses.append(val_loss)
+            val_accuracies.append(val_acc)
 
-                val_preds = np.argmax(output_val, axis=1)
-                val_acc = np.mean(val_preds == y_val)
-
-                val_losses.append(val_loss)
-                val_accuracies.append(val_acc)
-
-                print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
+            print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
 
@@ -145,39 +123,3 @@ class MLP:
 
         with open(filepath, "w") as f:
             json.dump(model_data, f)
-
-
-# Utility functions :
-
-def log_loss(y_true, y_pred):
-    epsilon = 1e-15
-    p = np.clip(y_pred, epsilon, 1 - epsilon)
-    return -np.mean(np.sum(y_true * np.log(p), axis=1))
-
-def close_on_key(event) -> None:
-    if event.key == 'escape':
-        plt.close(event.canvas.figure)
-
-def plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies):
-    fig = plt.figure(figsize=(14, 5))
-    fig.canvas.mpl_connect('key_press_event', close_on_key)
-
-    plt.subplot(1, 2, 1)
-    plt.plot(train_losses, label='Train Loss')
-    if val_losses:
-        plt.plot(val_losses, label='Val Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Loss Evolution')
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    plt.plot(train_accuracies, label='Train Accuracy')
-    if val_accuracies:
-        plt.plot(val_accuracies, label='Val Accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Accuracy Evolution')
-    plt.legend()
-
-    plt.show()
