@@ -20,13 +20,16 @@ class MLP:
         # Weight and bias initialization
         bias = np.zeros(num_neurons)
 
-        if activation in ['sigmoid', 'tanh', 'softmax']:
-            # Xavier initialization
+        if activation in ['sigmoid', 'softmax']:
+            # Random initialization
+            weight = np.random.randn(input_dim, num_neurons)
+        elif activation == 'tanh':
+            # Xavier Initialization
             limit = np.sqrt(1. / input_dim)
             weight = np.random.uniform(-limit, limit, (input_dim, num_neurons))
         elif activation == 'relu':
             # He initialization
-            weight = np.random.randn(input_dim, num_neurons) * np.sqrt(2. / input_dim)
+            weight = np.random.randn(input_dim, num_neurons) * np.sqrt(2.0 / input_dim)
         else:
             raise ValueError("Unsupported activation: choose from ['sigmoid','tanh','relu']")
 
@@ -47,19 +50,6 @@ class MLP:
             return exp_z / np.sum(exp_z, axis=1, keepdims=True)
         else:
             raise ValueError("Unsupported activation.")
-
-    # def activation_derivative(self, z, activation):
-    #     if activation == 'sigmoid':
-    #         sig = self.neuron_activation(z, 'sigmoid')
-    #         return sig * (1 - sig)
-    #     elif activation == 'tanh':
-    #         return 1 - np.tanh(z) ** 2
-    #     elif activation == 'relu':
-    #         return (z > 0).astype(float)
-    #     elif activation == 'softmax':
-    #         raise ValueError("Softmax derivative is handled implicitly with cross-entropy.")
-    #     else:
-    #         raise ValueError("Unsupported activation.")
 
     def activation_derivative(self, a, activation):
         if activation == 'sigmoid':
@@ -88,17 +78,17 @@ class MLP:
     def backpropagation(self, y, learning_rate):
         num_layers = len(self.layers)
         m = y.shape[0]
-        X = self.a_s[-1] # [input, a1, a2, output] [sigmoid, sigmoid, softmax] [w1, w2, w3]
+        X = self.a_s[-1] # [input, a1, a2, output] [sigmoid, sigmoid, softmax] [w1, w2, w3] [24, 24, 2]
 
         # Chain Rule Computation with derivatives
         delta = X - y
-        for i in reversed(range(0, num_layers)):
+        for i in reversed(range(num_layers)):
             # Compute Weights / Biases Gradient Descent
             dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0) / m
 
-            if i > 1:
-                delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(self.a_s[i - 1], self.activation_funcs[i - 1])
+            if i > 0:
+                delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(self.a_s[i], self.activation_funcs[i - 1])
 
             # Update weights and biases
             self.weights[i] -= learning_rate * dw

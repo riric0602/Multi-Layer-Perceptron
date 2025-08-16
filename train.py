@@ -11,7 +11,7 @@ def parse_parameters():
     parser.add_argument("-l", '--add_layers', type=int, nargs="+", default=[24, 24], help="Layers' sizes to add.")
     parser.add_argument('-a', '--activations', type=str, nargs="+", help="Learning rate for training.")
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.05, help="Learning rate for training.")
-    parser.add_argument('-e', '--epochs', type=int, default=600, help="Number of epochs to train.")
+    parser.add_argument('-e', '--epochs', type=int, default=1000, help="Number of epochs to train.")
 
     return parser.parse_args()
 
@@ -48,6 +48,12 @@ if __name__ == "__main__":
         X_val = np.array(X_val, dtype=np.float32)
         y_train = np.array(y_train, dtype=np.float32)
         y_val = np.array(y_val, dtype=np.float32)
+
+        mean = np.mean(X_train, axis=0, keepdims=True)
+        std = np.std(X_train, axis=0, keepdims=True)
+        std = np.where(std == 0, 1.0, std)
+        X_train = (X_train - mean) / std
+        X_val = (X_val - mean) / std
 
         input_size = X_train.shape[1]  # number of features
 

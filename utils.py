@@ -20,8 +20,8 @@ def metrics(model, X, y_true):
     y_pred = model.feedforward(X)
     loss = log_loss(y_true_oh, y_pred)
 
-    train_preds = np.argmax(y_pred, axis=1)
-    acc = np.mean(train_preds == y_true)
+    preds = np.argmax(y_pred, axis=1)
+    acc = np.mean(preds == y_true)
     return loss, acc
 
 
