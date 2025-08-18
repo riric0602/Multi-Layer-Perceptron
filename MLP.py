@@ -12,6 +12,8 @@ class MLP:
         self.biases = []               # bias vectors
         self.z_s = []  # pre-activation values
         self.a_s = []  # activation outputs
+        self.velocities_w = [np.zeros_like(w) for w in self.weights] # weights velocity
+        self.velocities_b = [np.zeros_like(b) for b in self.biases] # biases velocity
         np.random.seed(1)
 
 
@@ -84,7 +86,7 @@ class MLP:
     def backpropagation(self, y, learning_rate):
         num_layers = len(self.layers)
         m = y.shape[0]
-        X = self.a_s[-1] # [input, a1, a2, output] [sigmoid, sigmoid, softmax] [w1, w2, w3] [24, 24, 2]
+        X = self.a_s[-1]
 
         # Chain Rule Computation with derivatives
         delta = X - y
@@ -101,7 +103,12 @@ class MLP:
             self.biases[i] -= learning_rate * db
 
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, early_stop=None):
+    def learning_algorithm(self, X_train, y_train_oh, lr):
+        self.feedforward(X_train)
+        self.backpropagation(y_train_oh, lr)
+
+
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None):
         train_losses = []
         train_accuracies = []
         val_losses = []
@@ -115,8 +122,7 @@ class MLP:
         best_loss = float('inf')
 
         for epoch in range(epochs):
-            self.feedforward(X_train)
-            self.backpropagation(y_train_oh, lr)
+            self.learning_algorithm(X_train, y_train_oh, lr)
 
             # Compute training and validation metrics
             train_loss, train_acc = loss_and_accuracy(self, X_train, y_train)
@@ -127,13 +133,13 @@ class MLP:
             val_losses.append(val_loss)
             val_accuracies.append(val_acc)
 
-            if early_stop is not None:
+            if patience is not None:
                 if val_loss < best_loss - min_delta:
                     best_loss = val_loss
                     patience_counter = 0
                 else:
                     patience_counter += 1
-                    if patience_counter >= early_stop:
+                    if patience_counter >= patience:
                         print(f"Early stopping at epoch {epoch}")
                         break
 

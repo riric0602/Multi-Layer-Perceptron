@@ -73,7 +73,7 @@ if __name__ == "__main__":
         model.add_layer(2, activation='softmax')
 
         # Train the model
-        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, early_stop=early_stop)
+        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, patience=early_stop)
 
         # Save trained MLP model
         model.save_model("cancer_detection.json")
