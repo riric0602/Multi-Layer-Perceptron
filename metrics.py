@@ -4,7 +4,7 @@ import numpy as np
 
 def loss_and_accuracy(model, X, y_true):
     y_true_oh = one_hot_encoder(y_true, 2)
-    y_pred = model.feedforward(X)
+    y_pred = model.feedforward(X, model.weights, model.biases)
     loss = log_loss(y_true_oh, y_pred)
 
     preds = np.argmax(y_pred, axis=1)
@@ -13,7 +13,7 @@ def loss_and_accuracy(model, X, y_true):
 
 
 def confusion_matrix(model, X, y_true):
-    y_pred = model.feedforward(X)
+    y_pred = model.feedforward(X, model.weights, model.biases)
     y_pred = np.argmax(y_pred, axis=1)
     y_true = y_true.astype(int).ravel()
 

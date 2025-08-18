@@ -56,7 +56,7 @@ if __name__ == "__main__":
         print("Model loaded successfully !")
 
         X_scaled, y_true = read_and_scale_data()
-        probs = model.feedforward(X_scaled)
+        probs = model.feedforward(X_scaled, model.weights, model.biases)
         y_pred = np.argmax(probs, axis=1)
 
         # Compute metrics

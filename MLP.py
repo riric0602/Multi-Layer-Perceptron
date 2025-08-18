@@ -12,8 +12,8 @@ class MLP:
         self.biases = []               # bias vectors
         self.z_s = []  # pre-activation values
         self.a_s = []  # activation outputs
-        self.velocities_w = [np.zeros_like(w) for w in self.weights] # weights velocity
-        self.velocities_b = [np.zeros_like(b) for b in self.biases] # biases velocity
+        self.velocities_w = [] # weights velocity
+        self.velocities_b = [] # biases velocity
         np.random.seed(1)
 
 
@@ -70,12 +70,12 @@ class MLP:
             raise ValueError("Unsupported activation.")
 
 
-    def feedforward(self, X):
+    def feedforward(self, X, weights, biases):
         self.z_s = []
         self.a_s = [X]
 
         a = X
-        for w, b, act_func in zip(self.weights, self.biases, self.activation_funcs):
+        for w, b, act_func in zip(weights, biases, self.activation_funcs):
             z = np.dot(a, w) + b
             a = self.neuron_activation(z, act_func)
             self.z_s.append(z)
@@ -83,7 +83,7 @@ class MLP:
         return a
 
 
-    def backpropagation(self, y, learning_rate):
+    def backpropagation(self, y, lr, momentum):
         num_layers = len(self.layers)
         m = y.shape[0]
         X = self.a_s[-1]
@@ -98,14 +98,30 @@ class MLP:
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(self.a_s[i], self.activation_funcs[i - 1])
 
-            # Update weights and biases
-            self.weights[i] -= learning_rate * dw
-            self.biases[i] -= learning_rate * db
+            if momentum is not None:
+                # Momentum update
+                self.velocities_w[i] = momentum * self.velocities_w[i] + lr * dw
+                self.velocities_b[i] = momentum * self.velocities_b[i] + lr * db
+
+                # Update weights and biases
+                self.weights[i] -= self.velocities_w[i]
+                self.biases[i] -= self.velocities_b[i]
+            else:
+                # Update weights and biases
+                self.weights[i] -= lr * dw
+                self.biases[i] -= lr * db
 
 
-    def learning_algorithm(self, X_train, y_train_oh, lr):
-        self.feedforward(X_train)
-        self.backpropagation(y_train_oh, lr)
+    def learning_algorithm(self, X_train, y_train_oh, lr, momentum):
+        # Nesterov Optimization lookahead parameters
+        if momentum is not None:
+            weights = [w - momentum * vw for w, vw in zip(self.weights, self.velocities_w)]
+            biases = [b - momentum * vb for b, vb in zip(self.biases, self.velocities_b)]
+            self.feedforward(X_train, weights, biases)
+        else:
+            self.feedforward(X_train, self.weights, self.biases)
+
+        self.backpropagation(y_train_oh, lr, momentum)
 
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None):
@@ -116,13 +132,15 @@ class MLP:
 
         y_train_oh = one_hot_encoder(y_train, 2)
 
-        # Early stopping variables
+        # Early stopping and Nesterov Optimization variables
         min_delta = 0.01
         patience_counter = 0
         best_loss = float('inf')
+        self.velocities_w = [np.zeros_like(w) for w in self.weights]
+        self.velocities_b = [np.zeros_like(b) for b in self.biases]
 
         for epoch in range(epochs):
-            self.learning_algorithm(X_train, y_train_oh, lr)
+            self.learning_algorithm(X_train, y_train_oh, lr, momentum)
 
             # Compute training and validation metrics
             train_loss, train_acc = loss_and_accuracy(self, X_train, y_train)
