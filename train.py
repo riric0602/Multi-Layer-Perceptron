@@ -12,14 +12,17 @@ def parse_parameters():
     parser.add_argument('-a', '--activations', type=str, nargs="+", help="Learning rate for training.")
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.05, help="Learning rate for training.")
     parser.add_argument('-e', '--epochs', type=int, default=1000, help="Number of epochs to train.")
+    parser.add_argument('-es', '--early_stop', type=int, default=None, help="Number of epochs to stop before overfitting.")
 
     return parser.parse_args()
+
 
 def get_parameters(params):
     layers = params.add_layers
     learning_rate = params.learning_rate
     epochs = params.epochs
     activations = [None] * len(layers)
+    early_stop = params.early_stop
 
     if params.activations is not None:
         activations = [act.lower() for act in params.activations]
@@ -31,14 +34,14 @@ def get_parameters(params):
             if act not in {'relu', 'tanh', 'sigmoid'}:
                 raise ValueError("Error: activation function must be 'relu', 'tanh', or 'sigmoid'.")
 
-    return layers, activations, learning_rate, epochs
+    return layers, activations, learning_rate, epochs, early_stop
 
 
 if __name__ == "__main__":
     # try:
         # Get parameters from the command line
         params = parse_parameters()
-        layers, activations, learning_rate, epochs = get_parameters(params)
+        layers, activations, learning_rate, epochs, early_stop = get_parameters(params)
 
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
@@ -70,7 +73,7 @@ if __name__ == "__main__":
         model.add_layer(2, activation='softmax')
 
         # Train the model
-        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, learning_rate=learning_rate)
+        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, early_stop=early_stop)
 
         # Save trained MLP model
         model.save_model("cancer_detection.json")

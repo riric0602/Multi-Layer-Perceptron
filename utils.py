@@ -15,16 +15,6 @@ def log_loss(y_true, y_pred):
     return -np.mean(np.sum(y_true * np.log(p), axis=1))
 
 
-def metrics(model, X, y_true):
-    y_true_oh = one_hot_encoder(y_true, 2)
-    y_pred = model.feedforward(X)
-    loss = log_loss(y_true_oh, y_pred)
-
-    preds = np.argmax(y_pred, axis=1)
-    acc = np.mean(preds == y_true)
-    return loss, acc
-
-
 def close_on_key(event) -> None:
     if event.key == 'escape':
         plt.close(event.canvas.figure)
@@ -51,5 +41,28 @@ def plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accur
     plt.ylabel('Accuracy')
     plt.title('Accuracy Evolution')
     plt.legend()
+    plt.show()
 
+
+def plot_confusion_matrix(tn, fp, fn, tp, title="Confusion Matrix"):
+    cm = np.array([[tn, fp],
+                   [fn, tp]])
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(cm, cmap="Blues")
+
+    # Labels
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_xticks([0, 1]); ax.set_xticklabels(["0", "1"])
+    ax.set_yticks([0, 1]); ax.set_yticklabels(["0", "1"])
+    ax.set_title(title)
+
+    # Write numbers in cells
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, cm[i, j], ha="center", va="center",
+                    color="white" if cm[i, j] > cm.max()/2 else "black")
+
+    plt.colorbar(im)
     plt.show()

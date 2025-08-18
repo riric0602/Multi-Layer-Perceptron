@@ -1,6 +1,7 @@
 import json
 import numpy as np
-from utils import one_hot_encoder, metrics, plot_loss_and_accuracy
+from utils import one_hot_encoder, plot_loss_and_accuracy
+from metrics import loss_and_accuracy, confusion_matrix
 
 class MLP:
     def __init__(self, input_size):
@@ -12,6 +13,7 @@ class MLP:
         self.z_s = []  # pre-activation values
         self.a_s = []  # activation outputs
         np.random.seed(1)
+
 
     def add_layer(self, num_neurons, activation='sigmoid'):
         # Define input dimension of layer for initialization of weights / biases
@@ -38,6 +40,7 @@ class MLP:
         self.weights.append(weight)
         self.biases.append(bias)
 
+
     def neuron_activation(self, z, activation):
         if activation == 'sigmoid':
             return 1 / (1 + np.exp(-z))
@@ -51,6 +54,7 @@ class MLP:
         else:
             raise ValueError("Unsupported activation.")
 
+
     def activation_derivative(self, a, activation):
         if activation == 'sigmoid':
             return a * (1 - a)
@@ -63,6 +67,7 @@ class MLP:
         else:
             raise ValueError("Unsupported activation.")
 
+
     def feedforward(self, X):
         self.z_s = []
         self.a_s = [X]
@@ -74,6 +79,7 @@ class MLP:
             self.z_s.append(z)
             self.a_s.append(a)
         return a
+
 
     def backpropagation(self, y, learning_rate):
         num_layers = len(self.layers)
@@ -94,29 +100,50 @@ class MLP:
             self.weights[i] -= learning_rate * dw
             self.biases[i] -= learning_rate * db
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, learning_rate=0.001):
+
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, early_stop=None):
         train_losses = []
         train_accuracies = []
         val_losses = []
         val_accuracies = []
+
         y_train_oh = one_hot_encoder(y_train, 2)
+
+        # Early stopping variables
+        min_delta = 0.01
+        patience_counter = 0
+        best_loss = float('inf')
 
         for epoch in range(epochs):
             self.feedforward(X_train)
-            self.backpropagation(y_train_oh, learning_rate)
+            self.backpropagation(y_train_oh, lr)
 
             # Compute training and validation metrics
-            train_loss, train_acc = metrics(self, X_train, y_train)
+            train_loss, train_acc = loss_and_accuracy(self, X_train, y_train)
             train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
-            val_loss, val_acc = metrics(self, X_val, y_val)
+            val_loss, val_acc = loss_and_accuracy(self, X_val, y_val)
             val_losses.append(val_loss)
             val_accuracies.append(val_acc)
+
+            if early_stop is not None:
+                if val_loss < best_loss - min_delta:
+                    best_loss = val_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    if patience_counter >= early_stop:
+                        print(f"Early stopping at epoch {epoch}")
+                        break
+
+            # tp_train, tn_train, fp_train, fn_train = confusion_matrix(self, X_train, y_train)
+            # tp_val, tn_val, fp_val, fn_val = confusion_matrix(self, X_val, y_val)
 
             print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
         plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
+
 
     def save_model(self, filepath):
         model_data = {

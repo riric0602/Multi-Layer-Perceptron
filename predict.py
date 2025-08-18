@@ -17,6 +17,7 @@ def load_model(filepath):
 
     return weights, biases, activations
 
+
 def read_and_scale_data():
     # Load and preprocess the dataset
     df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
@@ -30,12 +31,14 @@ def read_and_scale_data():
 
     return X_scaled, y_true
 
+
 def binary_cross_entropy(y_true, y_pred):
     eps = 1e-15
     y_pred = np.clip(y_pred, eps, 1 - eps)
 
     bce = - (y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
     return np.mean(bce)
+
 
 if __name__ == "__main__":
     try:
