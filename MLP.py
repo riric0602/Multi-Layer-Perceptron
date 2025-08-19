@@ -128,7 +128,7 @@ class MLP:
         self.backpropagation(y_train_oh, lr, momentum)
 
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None, metrics=None):
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None, metrics=None, history=None):
         # One hot encode the true results
         y_train_oh = one_hot_encoder(y_train, 2)
         y_val_oh = one_hot_encoder(y_val, 2)
@@ -200,6 +200,27 @@ class MLP:
             val_mse = mse(self, X_val, y_val_oh)
             print(f"\nTrain MSE: {train_mse}")
             print(f"Validation MSE: {val_mse}")
+
+        if history is True:
+            # History of training metrics
+            min_train_loss = min(self.train_losses)
+            min_train_loss_epoch = self.train_losses.index(min_train_loss) + 1
+            max_train_acc = max(self.train_accuracies)
+            max_train_acc_epoch = self.train_accuracies.index(max_train_acc) + 1
+
+            # History of validation metrics
+            min_val_loss = min(self.val_losses)
+            min_val_loss_epoch = self.val_losses.index(min_val_loss) + 1
+            max_val_acc = max(self.val_accuracies)
+            max_val_acc_epoch = self.val_accuracies.index(max_val_acc) + 1
+
+            print("\n=== Training Metrics ===")
+            print(f"Minimum Train Loss: {min_train_loss:.4f} at epoch {min_train_loss_epoch}")
+            print(f"Maximum Train Accuracy: {max_train_acc:.4f} at epoch {max_train_acc_epoch}\n")
+
+            print("\n=== Validation Metrics ===")
+            print(f"Minimum Validation Loss: {min_val_loss:.4f} at epoch {min_val_loss_epoch}")
+            print(f"Maximum Validation Accuracy: {max_val_acc:.4f} at epoch {max_val_acc_epoch}")
 
 
     def save_model(self, filepath):

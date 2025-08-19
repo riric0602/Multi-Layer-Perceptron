@@ -19,6 +19,8 @@ def parse_parameters():
                         help="Name of the model to be saved after training.")
     parser.add_argument('-s', '--bonus_metrics', action="store_true",
                         help="Additional metrics for the learning phase.")
+    parser.add_argument('-H', '--history', action="store_true",
+                        help="History of metrics obtained during training.")
 
     return parser.parse_args()
 
@@ -32,6 +34,7 @@ def get_parameters(params):
     momentum = params.nesterov
     name = params.model_name
     metrics = params.bonus_metrics
+    history = params.history
 
     if params.activations is not None:
         activations = [act.lower() for act in params.activations]
@@ -43,14 +46,14 @@ def get_parameters(params):
             if act not in {'relu', 'tanh', 'sigmoid'}:
                 raise ValueError("Error: activation function must be 'relu', 'tanh', or 'sigmoid'.")
 
-    return layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics
+    return layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history
 
 
 if __name__ == "__main__":
     try:
         # Get parameters from the command line
         params = parse_parameters()
-        layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics = get_parameters(params)
+        layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history = get_parameters(params)
 
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
@@ -82,11 +85,22 @@ if __name__ == "__main__":
         model.add_layer(2, activation='softmax')
 
         # Train the model
-        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, patience=early_stop, momentum=momentum, metrics=metrics)
+        model.fit(
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+            epochs=epochs,
+            lr=learning_rate,
+            patience=early_stop,
+            momentum=momentum,
+            metrics=metrics,
+            history=history
+        )
 
         # Save trained MLP model
         model.save_model(f"{name}.json")
-        print(f"Model '{name}.json' saved locally.")
+        print(f"\nModel '{name}.json' saved locally.")
 
     except Exception as e:
         print(f"Error: {e}")
