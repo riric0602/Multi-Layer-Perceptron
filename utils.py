@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import json
 
 
 def one_hot_encoder(y, num_classes):
@@ -66,3 +67,19 @@ def plot_confusion_matrix(tn, fp, fn, tp, title="Confusion Matrix"):
 
     plt.colorbar(im)
     plt.show()
+
+
+def load_model(filepath):
+    with open(filepath, "r") as f:
+        model_data = json.load(f)
+
+    weights = [np.array(w) for w in model_data["weights"]]
+    biases = [np.array(b) for b in model_data["biases"]]
+    activations = [a for a in model_data["activations"]]
+    train_losses = [a for a in model_data["train_loss_history"]]
+    val_losses = [a for a in model_data["val_loss_history"]]
+    train_accuracies = [a for a in model_data["train_accuracy_history"]]
+    val_accuracies = [a for a in model_data["val_accuracy_history"]]
+
+    return weights, biases, activations, train_losses, val_losses, train_accuracies, val_accuracies
+

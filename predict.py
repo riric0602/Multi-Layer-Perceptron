@@ -3,19 +3,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from MLP import MLP
 import pandas as pd
-import json
+import argparse
 from separate import preprocess_dataset, DATA_FILE, COLUMN_NAMES
-
-
-def load_model(filepath):
-    with open(filepath, "r") as f:
-        model_data = json.load(f)
-
-    weights = [np.array(w) for w in model_data["weights"]]
-    biases = [np.array(b) for b in model_data["biases"]]
-    activations = [a for a in model_data["activations"]]
-
-    return weights, biases, activations
+from utils import load_model
 
 
 def read_and_scale_data():
@@ -40,10 +30,23 @@ def binary_cross_entropy(y_true, y_pred):
     return np.mean(bce)
 
 
+def parse_parameters():
+    parser = argparse.ArgumentParser(
+        description="Predict if a given dataset's cells are malignant or benign."
+    )
+
+    parser.add_argument("-n", '--model_name', type=str, default="cancer_detection", help="Name of the model to use for prediction.")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     try:
+        # Retrieve trained model to use for prediction
+        params = parse_parameters()
+        name = params.model_name
+
         # Load weights and biases
-        weights, biases, activations = load_model('cancer_detection.json')
+        weights, biases, activations, _, _, _, _ = load_model(f'{name}.json')
 
         # Create model instance with input size based on first layer weights shape
         model = MLP(input_size=weights[0].shape[0])

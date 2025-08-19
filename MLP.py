@@ -14,6 +14,10 @@ class MLP:
         self.a_s = []  # activation outputs
         self.velocities_w = [] # weights velocity
         self.velocities_b = [] # biases velocity
+        self.train_losses = []
+        self.val_losses = []
+        self.train_accuracies = []
+        self.val_accuracies = []
         np.random.seed(1)
 
 
@@ -125,11 +129,7 @@ class MLP:
 
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None):
-        train_losses = []
-        train_accuracies = []
-        val_losses = []
-        val_accuracies = []
-
+        # One hot encode the train true results
         y_train_oh = one_hot_encoder(y_train, 2)
 
         # Early stopping and Nesterov Optimization variables
@@ -144,12 +144,12 @@ class MLP:
 
             # Compute training and validation metrics
             train_loss, train_acc = loss_and_accuracy(self, X_train, y_train)
-            train_losses.append(train_loss)
-            train_accuracies.append(train_acc)
+            self.train_losses.append(train_loss)
+            self.train_accuracies.append(train_acc)
 
             val_loss, val_acc = loss_and_accuracy(self, X_val, y_val)
-            val_losses.append(val_loss)
-            val_accuracies.append(val_acc)
+            self.val_losses.append(val_loss)
+            self.val_accuracies.append(val_acc)
 
             if patience is not None:
                 if val_loss < best_loss - min_delta:
@@ -166,14 +166,18 @@ class MLP:
 
             print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
-        plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies)
+        plot_loss_and_accuracy(self.train_losses, self.train_accuracies, self.val_losses, self.val_accuracies)
 
 
     def save_model(self, filepath):
         model_data = {
             "weights": [w.tolist() for w in self.weights],
             "biases": [b.tolist() for b in self.biases],
-            "activations": [a for a in self.activation_funcs]
+            "activations": [a for a in self.activation_funcs],
+            "train_loss_history": self.train_losses,
+            "val_loss_history": self.val_losses,
+            "train_accuracy_history": self.train_accuracies,
+            "val_accuracy_history": self.val_accuracies,
         }
 
         with open(filepath, "w") as f:
