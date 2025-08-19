@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score
 from MLP import MLP
 import pandas as pd
 import argparse
@@ -60,10 +60,12 @@ if __name__ == "__main__":
 
         X_scaled, y_true = read_and_scale_data()
         probs = model.feedforward(X_scaled, model.weights, model.biases)
-        y_pred = np.argmax(probs, axis=1)
+        probs_binary = probs[:, 1].reshape(-1, 1)
+
+        y_pred = (probs_binary > 0.5).astype(int).flatten()
 
         # Compute metrics
-        loss = binary_cross_entropy(y_true.reshape(-1, 1), probs)
+        loss = binary_cross_entropy(y_true.reshape(-1, 1), probs_binary)
         acc = accuracy_score(y_true, y_pred)
         precision = precision_score(y_true, y_pred)
 

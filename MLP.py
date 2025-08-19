@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from utils import one_hot_encoder, plot_loss_and_accuracy
+from utils import plot_loss_and_accuracy
 from metrics import *
 
 class MLP:
