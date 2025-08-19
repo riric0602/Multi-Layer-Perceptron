@@ -172,10 +172,10 @@ class MLP:
             tp_val, tn_val, fp_val, fn_val = confusion_matrix(self, X_val, y_val)
 
             print("\nTrain Confusion matrix:")
-            print(f"[{tp_train}, {tn_train}\n{fp_train}, {fn_train}]\n")
+            print(f"[{tp_train}, {fp_train}\n{fn_train}, {tn_train}]\n")
 
             print("Validation Confusion matrix:")
-            print(f"[{tp_val}, {tn_val}\n{fp_val}, {fn_val}]\n")
+            print(f"[{tp_val}, {fp_val}\n{fn_val}, {tn_val}]\n")
 
             # Compute Precision of model
             train_precision = precision(tp_train, fp_train)
