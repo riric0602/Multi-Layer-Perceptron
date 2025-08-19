@@ -8,15 +8,17 @@ def parse_parameters():
         description="Train a Multi-Layer Perceptron model for binary classification of breast cancer."
     )
 
-    parser.add_argument("-l", '--add_layers', type=int, nargs="+", default=[24, 24], help="Layers' sizes to add.")
+    parser.add_argument("-l", '--add_layers', type=int, nargs="+", default=[24, 24, 24], help="Layers' sizes to add.")
     parser.add_argument('-a', '--activations', type=str, nargs="+", help="Learning rate for training.")
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.05, help="Learning rate for training.")
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.01, help="Learning rate for training.")
     parser.add_argument('-e', '--epochs', type=int, default=1000, help="Number of epochs to train.")
     parser.add_argument('-es', '--early_stop', type=int, default=None, help="Number of epochs to stop before overfitting.")
     parser.add_argument('-m', '--nesterov', type=float, default=None,
                         help="Momentum lookahead for the nesterov optimization.")
     parser.add_argument('-n', '--model_name', type=str, default="cancer_detection",
                         help="Name of the model to be saved after training.")
+    parser.add_argument('-s', '--bonus_metrics', action="store_true",
+                        help="Additional metrics for the learning phase.")
 
     return parser.parse_args()
 
@@ -29,6 +31,7 @@ def get_parameters(params):
     early_stop = params.early_stop
     momentum = params.nesterov
     name = params.model_name
+    metrics = params.bonus_metrics
 
     if params.activations is not None:
         activations = [act.lower() for act in params.activations]
@@ -40,14 +43,14 @@ def get_parameters(params):
             if act not in {'relu', 'tanh', 'sigmoid'}:
                 raise ValueError("Error: activation function must be 'relu', 'tanh', or 'sigmoid'.")
 
-    return layers, activations, learning_rate, epochs, early_stop, momentum, name
+    return layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics
 
 
 if __name__ == "__main__":
     try:
         # Get parameters from the command line
         params = parse_parameters()
-        layers, activations, learning_rate, epochs, early_stop, momentum, name = get_parameters(params)
+        layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics = get_parameters(params)
 
         # Retrieve training and validation sets
         X_train, X_val, y_train, y_val = preprocess_and_split_data()
@@ -79,7 +82,7 @@ if __name__ == "__main__":
         model.add_layer(2, activation='softmax')
 
         # Train the model
-        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, patience=early_stop, momentum=momentum)
+        model.fit(X_train, y_train, X_val, y_val, epochs=epochs, lr=learning_rate, patience=early_stop, momentum=momentum, metrics=metrics)
 
         # Save trained MLP model
         model.save_model(f"{name}.json")

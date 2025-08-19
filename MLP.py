@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from utils import one_hot_encoder, plot_loss_and_accuracy
-from metrics import loss_and_accuracy, confusion_matrix
+from metrics import *
 
 class MLP:
     def __init__(self, input_size):
@@ -128,9 +128,10 @@ class MLP:
         self.backpropagation(y_train_oh, lr, momentum)
 
 
-    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None):
-        # One hot encode the train true results
+    def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None, metrics=None):
+        # One hot encode the true results
         y_train_oh = one_hot_encoder(y_train, 2)
+        y_val_oh = one_hot_encoder(y_val, 2)
 
         # Early stopping and Nesterov Optimization variables
         min_delta = 0.01
@@ -161,12 +162,44 @@ class MLP:
                         print(f"Early stopping at epoch {epoch}")
                         break
 
-            # tp_train, tn_train, fp_train, fn_train = confusion_matrix(self, X_train, y_train)
-            # tp_val, tn_val, fp_val, fn_val = confusion_matrix(self, X_val, y_val)
-
             print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
 
         plot_loss_and_accuracy(self.train_losses, self.train_accuracies, self.val_losses, self.val_accuracies)
+
+        if metrics is True:
+            #  Train and Validation Confusion matrix
+            tp_train, tn_train, fp_train, fn_train = confusion_matrix(self, X_train, y_train)
+            tp_val, tn_val, fp_val, fn_val = confusion_matrix(self, X_val, y_val)
+
+            print("\nTrain Confusion matrix:")
+            print(f"[{tp_train}, {tn_train}\n{fp_train}, {fn_train}]\n")
+
+            print("Validation Confusion matrix:")
+            print(f"[{tp_val}, {tn_val}\n{fp_val}, {fn_val}]\n")
+
+            # Compute Precision of model
+            train_precision = precision(tp_train, fp_train)
+            val_precision = precision(tp_val, fp_val)
+            print(f"\nTrain Precision: {train_precision}")
+            print(f"Validation Precision: {val_precision}")
+
+            # Compute Recall of model
+            train_recall = recall(tp_train, fn_train)
+            val_recall = recall(tp_val, fn_val)
+            print(f"\nTrain Recall: {train_recall}")
+            print(f"Validation Recall: {val_recall}")
+
+            # Compute F1 of model
+            train_f1 = f1(train_precision, train_recall)
+            val_f1 = f1(val_precision, val_recall)
+            print(f"\nTrain F1: {train_f1}")
+            print(f"Validation F1: {val_f1}")
+
+            # Compute MSE of model
+            train_mse = mse(self, X_train, y_train_oh)
+            val_mse = mse(self, X_val, y_val_oh)
+            print(f"\nTrain MSE: {train_mse}")
+            print(f"Validation MSE: {val_mse}")
 
 
     def save_model(self, filepath):

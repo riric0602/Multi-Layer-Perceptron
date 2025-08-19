@@ -23,3 +23,21 @@ def confusion_matrix(model, X, y_true):
     fn = np.sum((y_pred == 0) & (y_true == 1))
 
     return int(tp), int(tn), int(fp), int(fn)
+
+
+def precision(tp, fp):
+    return tp / (tp + fp)
+
+
+def recall(tp, fn):
+    return tp / (tp + fn)
+
+
+def f1(precision, recall):
+    return 2 * precision * recall / (precision + recall)
+
+
+def mse(model, X, y_true):
+    y_pred = model.feedforward(X, model.weights, model.biases)
+    return np.mean((y_true - y_pred)**2)
+
