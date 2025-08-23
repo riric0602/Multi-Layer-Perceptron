@@ -18,16 +18,6 @@ COLUMN_NAMES = [
 ]
 
 
-def preprocess_and_split_data():
-    # Load and Preprocess data
-    df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
-    df = preprocess_dataset(df)
-
-    # Split into training and validation set
-    X_train, X_val, y_train, y_val = split_dataset(df)
-    return X_train, X_val, y_train, y_val
-
-
 def preprocess_dataset(df: DataFrame):
     df.drop(columns=['Id'], inplace=True, errors='ignore')
     df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1})

@@ -1,7 +1,8 @@
 import numpy as np
+import pandas as pd
 from MLP import MLP
 import argparse
-from separate import preprocess_and_split_data
+import os
 
 def parse_parameters():
     parser = argparse.ArgumentParser(
@@ -56,7 +57,16 @@ if __name__ == "__main__":
         layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history = get_parameters(params)
 
         # Retrieve training and validation sets
-        X_train, X_val, y_train, y_val = preprocess_and_split_data()
+        if os.path.exists("train.csv") and os.path.exists("val.csv"):
+            train_df = pd.read_csv("train.csv")
+            val_df = pd.read_csv("val.csv")
+
+            X_train = train_df.drop(columns=["Diagnosis"])
+            y_train = train_df["Diagnosis"]
+            X_val = val_df.drop(columns=["Diagnosis"])
+            y_val = val_df["Diagnosis"]
+        else:
+            raise ValueError("Error: Train and Validation datasets do not exist. Run separate.py script.")
 
         # Make sure data is numpy arrays and floats
         X_train = np.array(X_train, dtype=np.float32)
