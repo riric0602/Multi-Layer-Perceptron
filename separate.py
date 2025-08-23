@@ -18,14 +18,11 @@ COLUMN_NAMES = [
 ]
 
 
-def parse_parameters():
-    parser = argparse.ArgumentParser(
-        description="Separate a dataset into training and validation sets."
-    )
-    return parser.parse_args()
-
-
 def preprocess_dataset(df: DataFrame):
+    """
+    Preprocess dataset by converting diagnosis into 0/1 (Benign/Malignant).
+    Remove any null values and drop the ID column.
+    """
     df.drop(columns=['Id'], inplace=True, errors='ignore')
     df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1})
 
@@ -37,6 +34,9 @@ def preprocess_dataset(df: DataFrame):
 
 
 def plot_diagnosis_distribution(df: DataFrame):
+    """
+    Plot distribution of diagnosis values in the main dataset.
+    """
     plot = sns.countplot(
         x='Diagnosis',
         hue='Diagnosis',
@@ -47,6 +47,10 @@ def plot_diagnosis_distribution(df: DataFrame):
 
 
 def plot_correlation_heatmap(df: DataFrame):
+    """
+    Plot correlation heatmap of the 10 middle features of the dataset.
+    This plot shows how proportionate some variables are with the diagnosis.
+    """
     # Select the columns to be used in the HeatMap Plot
     middle_10_features = df.columns[12:22]
     selected_columns = ['Diagnosis'] + list(middle_10_features)
@@ -63,6 +67,9 @@ def plot_correlation_heatmap(df: DataFrame):
 
 
 def plot_top_correlated_features(df):
+    """
+    Plot the most correlated features of the dataset with the Malignant diagnosis.
+    """
     # Get positive correlations with target -> Malignant correlations
     correlations = df.corr()['Diagnosis'].drop('Diagnosis').sort_values()
     positive_values = correlations[correlations > 0].sort_values(ascending=False)
@@ -83,6 +90,9 @@ def plot_top_correlated_features(df):
 
 
 def plot_pair_plot(df: DataFrame):
+    """
+    Plot the pair plot of the dataset with 5 chosen variables.
+    """
     plot = sns.pairplot(
         df[
             ['Radius Mean', 'Texture Mean', 'Perimeter Mean', 'Area Mean', 'Diagnosis']
@@ -98,6 +108,9 @@ def plot_pair_plot(df: DataFrame):
 
 
 def plot_split_distribution(y_train, y_val):
+    """
+    Plot the distribution of the diagnosis in the train and validation datasets.
+    """
     split_data = pd.DataFrame({
         'Diagnosis': list(y_train) + list(y_val),
         'Split': ['Train'] * len(y_train) + ['Validation'] * len(y_val)
@@ -115,6 +128,9 @@ def plot_split_distribution(y_train, y_val):
 
 
 def split_dataset(df: DataFrame):
+    """
+    Split the dataset into train and validation datasets.
+    """
     # Convert dataframe into input and output
     X = df.drop(columns=['Diagnosis'])
     y = df['Diagnosis']
@@ -131,6 +147,9 @@ def split_dataset(df: DataFrame):
 
 
 def save_split_dataset(X_train, X_val, y_train, y_val):
+    """
+    Save the train and validation datasets into .csv files.
+    """
     train_df = X_train.copy()
     train_df["Diagnosis"] = y_train
 
