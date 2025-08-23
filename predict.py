@@ -4,11 +4,17 @@ from sklearn.metrics import accuracy_score, precision_score
 from MLP import MLP
 import pandas as pd
 import argparse
-from separate import preprocess_dataset, DATA_FILE, COLUMN_NAMES
+from separate import preprocess_dataset, COLUMN_NAMES
 from utils import load_model
 
 
+DATA_FILE = "data.csv"
+
+
 def read_and_scale_data():
+    """
+    Read and scale the given dataset to be predicted.
+    """
     # Load and preprocess the dataset
     df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
     dataset = preprocess_dataset(df)
@@ -23,6 +29,9 @@ def read_and_scale_data():
 
 
 def binary_cross_entropy(y_true, y_pred):
+    """
+    Compute the binary cross entropy loss for the results.
+    """
     eps = 1e-15
     y_pred = np.clip(y_pred, eps, 1 - eps)
 
@@ -31,6 +40,9 @@ def binary_cross_entropy(y_true, y_pred):
 
 
 def parse_parameters():
+    """
+    Parse the command line parameters.
+    """
     parser = argparse.ArgumentParser(
         description="Predict if a given dataset's cells are malignant or benign."
     )
