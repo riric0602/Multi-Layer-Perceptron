@@ -130,6 +130,17 @@ def split_dataset(df: DataFrame):
     return X_train, X_val, y_train, y_val
 
 
+def save_split_dataset(X_train, X_val, y_train, y_val):
+    train_df = X_train.copy()
+    train_df["Diagnosis"] = y_train
+
+    val_df = X_val.copy()
+    val_df["Diagnosis"] = y_val
+
+    train_df.to_csv("train.csv", index=False)
+    val_df.to_csv("val.csv", index=False)
+
+
 if __name__ == "__main__":
     try:
         if len(sys.argv) == 2:
@@ -153,17 +164,9 @@ if __name__ == "__main__":
         plot_top_correlated_features(df)
         plot_pair_plot(df)
 
+        # Split into train/validation sets and save them as .csv
         X_train, X_val, y_train, y_val = split_dataset(df)
-
-        # Save train and validation sets
-        train_df = X_train.copy()
-        train_df["Diagnosis"] = y_train
-
-        val_df = X_val.copy()
-        val_df["Diagnosis"] = y_val
-
-        train_df.to_csv("train.csv", index=False)
-        val_df.to_csv("val.csv", index=False)
+        save_split_dataset(X_train, X_val, y_train, y_val)
 
         plot_split_distribution(y_train, y_val)
 
