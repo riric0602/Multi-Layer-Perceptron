@@ -119,11 +119,13 @@ def plot_split_distribution(y_train, y_val):
 
 def split_dataset(df: DataFrame):
     # Convert dataframe into input and output
-    X = df.drop(columns=['Diagnosis']).values
-    y = df['Diagnosis'].values
+    X = df.drop(columns=['Diagnosis'])
+    y = df['Diagnosis']
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
+
+    X_scaled = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
 
     X_train, X_val, y_train, y_val = train_test_split(
         X_scaled, y, test_size=0.2, random_state=42, stratify=y
@@ -132,7 +134,7 @@ def split_dataset(df: DataFrame):
 
 
 if __name__ == "__main__":
-    try:
+    # try:
         if not os.path.exists(DATA_FILE):
             print("Dataset file does not exist. Provide it in directory and try again.")
             sys.exit()
@@ -151,7 +153,18 @@ if __name__ == "__main__":
         plot_pair_plot(df)
 
         X_train, X_val, y_train, y_val = split_dataset(df)
+
+        # Save train and validation sets
+        train_df = X_train.copy()
+        train_df["Diagnosis"] = y_train
+
+        val_df = X_val.copy()
+        val_df["Diagnosis"] = y_val
+
+        train_df.to_csv("train.csv", index=False)
+        val_df.to_csv("val.csv", index=False)
+
         plot_split_distribution(y_train, y_val)
 
-    except Exception as e:
-        print(f"Error: {e}")
+    # except Exception as e:
+    #     print(f"Error: {e}")
