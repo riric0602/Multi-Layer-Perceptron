@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 
 
 def plot_compare(history1, history2, label1="Model 1", label2="Model 2"):
+    """
+    PLot loss and accuracy graphs of two different models
+    .
+    """
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     fig.canvas.mpl_connect('key_press_event', close_on_key)
 
@@ -44,7 +48,7 @@ def plot_compare(history1, history2, label1="Model 1", label2="Model 2"):
 
 
 if __name__ == "__main__":
-    # try:
+    try:
         if len(sys.argv) != 3:
             print("Usage: python compare.py model1_path model2_path")
             sys.exit(1)
@@ -69,6 +73,5 @@ if __name__ == "__main__":
 
         plot_compare(history_1, history_2, label1="Model 1", label2="Model 2")
 
-
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")

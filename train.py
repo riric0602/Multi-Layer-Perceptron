@@ -5,6 +5,9 @@ import argparse
 import os
 
 def parse_parameters():
+    """
+    Parse command line arguments for training options.
+    """
     parser = argparse.ArgumentParser(
         description="Train a Multi-Layer Perceptron model for binary classification of breast cancer."
     )
@@ -27,6 +30,9 @@ def parse_parameters():
 
 
 def get_parameters(params):
+    """
+    Parse command line arguments for training options.
+    """
     layers = params.add_layers
     learning_rate = params.learning_rate
     epochs = params.epochs
@@ -50,6 +56,42 @@ def get_parameters(params):
     return layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history
 
 
+def get_train_validation_sets():
+    """
+    Retrieve training and validation sets.
+    """
+    if os.path.exists("train.csv") and os.path.exists("val.csv"):
+        train_df = pd.read_csv("train.csv")
+        val_df = pd.read_csv("val.csv")
+
+        X_train = train_df.drop(columns=["Diagnosis"])
+        y_train = train_df["Diagnosis"]
+        X_val = val_df.drop(columns=["Diagnosis"])
+        y_val = val_df["Diagnosis"]
+
+        return standarize_datasets(X_train, y_train, X_val, y_val)
+    else:
+        raise ValueError("Train and Validation datasets do not exist. Run separate.py script.")
+
+
+def standarize_datasets(X_train, y_train, X_val, y_val):
+    """
+    Standardize the training and validation sets.
+    """
+    X_train = np.array(X_train, dtype=np.float32)
+    X_val = np.array(X_val, dtype=np.float32)
+    y_train = np.array(y_train, dtype=np.float32)
+    y_val = np.array(y_val, dtype=np.float32)
+
+    mean = np.mean(X_train, axis=0, keepdims=True)
+    std = np.std(X_train, axis=0, keepdims=True)
+    std = np.where(std == 0, 1.0, std)
+    X_train = (X_train - mean) / std
+    X_val = (X_val - mean) / std
+
+    return X_train, y_train, X_val, y_val
+
+
 if __name__ == "__main__":
     try:
         # Get parameters from the command line
@@ -57,32 +99,10 @@ if __name__ == "__main__":
         layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history = get_parameters(params)
 
         # Retrieve training and validation sets
-        if os.path.exists("train.csv") and os.path.exists("val.csv"):
-            train_df = pd.read_csv("train.csv")
-            val_df = pd.read_csv("val.csv")
-
-            X_train = train_df.drop(columns=["Diagnosis"])
-            y_train = train_df["Diagnosis"]
-            X_val = val_df.drop(columns=["Diagnosis"])
-            y_val = val_df["Diagnosis"]
-        else:
-            raise ValueError("Train and Validation datasets do not exist. Run separate.py script.")
-
-        # Make sure data is numpy arrays and floats
-        X_train = np.array(X_train, dtype=np.float32)
-        X_val = np.array(X_val, dtype=np.float32)
-        y_train = np.array(y_train, dtype=np.float32)
-        y_val = np.array(y_val, dtype=np.float32)
-
-        mean = np.mean(X_train, axis=0, keepdims=True)
-        std = np.std(X_train, axis=0, keepdims=True)
-        std = np.where(std == 0, 1.0, std)
-        X_train = (X_train - mean) / std
-        X_val = (X_val - mean) / std
-
-        input_size = X_train.shape[1]  # number of features
+        X_train, y_train, X_val, y_val = get_train_validation_sets()
 
         # Initialize the model
+        input_size = X_train.shape[1]
         model = MLP(input_size)
 
         for layer, activation in zip(layers, activations):
