@@ -1,6 +1,7 @@
 import os
 import sys
 import pandas as pd
+import argparse
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -8,7 +9,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from utils import close_on_key
 
-DATA_FILE = 'data.csv'
 COLUMN_NAMES = [
     'Id',
     'Diagnosis',
@@ -16,6 +16,13 @@ COLUMN_NAMES = [
     'Radius SE', 'Texture SE', 'Perimeter SE', 'Area SE', 'Smoothness SE', 'Compactness SE', 'Concavity SE', 'Concave Points SE', 'Symmetry SE', 'Fractal Dimension SE',
     'Radius Worst', 'Texture Worst', 'Perimeter Worst', 'Area Worst', 'Smoothness Worst', 'Compactness Worst', 'Concavity Worst', 'Concave Points Worst', 'Symmetry Worst', 'Fractal Dimension Worst',
 ]
+
+
+def parse_parameters():
+    parser = argparse.ArgumentParser(
+        description="Separate a dataset into training and validation sets."
+    )
+    return parser.parse_args()
 
 
 def preprocess_dataset(df: DataFrame):
@@ -124,13 +131,17 @@ def split_dataset(df: DataFrame):
 
 
 if __name__ == "__main__":
-    # try:
-        if not os.path.exists(DATA_FILE):
-            print("Dataset file does not exist. Provide it in directory and try again.")
-            sys.exit()
+    try:
+        if len(sys.argv) == 2:
+            data_path = sys.argv[1]
+        else:
+            raise ValueError("Please provide dataset path.")
+
+        if not os.path.exists(data_path):
+            raise ValueError("Dataset file does not exist. Provide it in directory and try again.")
 
         # Load and clean the data
-        df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
+        df = pd.read_csv(data_path, names=COLUMN_NAMES, header=0)
         df = preprocess_dataset(df)
 
         # Visualize DataFrame on the terminal
@@ -156,5 +167,5 @@ if __name__ == "__main__":
 
         plot_split_distribution(y_train, y_val)
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
