@@ -66,7 +66,7 @@ if __name__ == "__main__":
             X_val = val_df.drop(columns=["Diagnosis"])
             y_val = val_df["Diagnosis"]
         else:
-            raise ValueError("Error: Train and Validation datasets do not exist. Run separate.py script.")
+            raise ValueError("Train and Validation datasets do not exist. Run separate.py script.")
 
         # Make sure data is numpy arrays and floats
         X_train = np.array(X_train, dtype=np.float32)
