@@ -1,10 +1,12 @@
 import json
-import numpy as np
-from utils import plot_loss_and_accuracy
+from utils import plot_loss_and_accuracy, display_bonus_metrics, display_history
 from metrics import *
 
 class MLP:
     def __init__(self, input_size):
+        """
+        Initialization of the MLP object with input size.
+        """
         self.input_size = input_size
         self.layers = []              # list of neuron counts per layer
         self.activation_funcs = []    # activation function names per layer
@@ -22,6 +24,9 @@ class MLP:
 
 
     def add_layer(self, num_neurons, activation='sigmoid'):
+        """
+        Add a neural network layer to the MLP object.
+        """
         # Define input dimension of layer for initialization of weights / biases
         input_dim = self.input_size if not self.layers else self.layers[-1]
 
@@ -48,6 +53,9 @@ class MLP:
 
 
     def neuron_activation(self, z, activation):
+        """
+        Activation function for a neuron in the neural network.
+        """
         if activation == 'sigmoid':
             return 1 / (1 + np.exp(-z))
         elif activation == 'tanh':
@@ -62,6 +70,9 @@ class MLP:
 
 
     def activation_derivative(self, a, activation):
+        """
+        Partial Derivative of an activation function for a neuron.
+        """
         if activation == 'sigmoid':
             return a * (1 - a)
         elif activation == 'tanh':
@@ -75,6 +86,9 @@ class MLP:
 
 
     def feedforward(self, X, weights, biases):
+        """
+        Feedforward a neural network using weights and biases.
+        """
         self.z_s = []
         self.a_s = [X]
 
@@ -88,6 +102,9 @@ class MLP:
 
 
     def backpropagation(self, y, lr, momentum):
+        """
+        Backpropagate a neural network using gradient descent to optimize weights and biases.
+        """
         num_layers = len(self.layers)
         m = y.shape[0]
         X = self.a_s[-1]
@@ -117,6 +134,9 @@ class MLP:
 
 
     def learning_algorithm(self, X_train, y_train_oh, lr, momentum):
+        """
+        Training logic using feedforward and backpropagation.
+        """
         # Nesterov Optimization lookahead parameters
         if momentum is not None:
             weights = [w - momentum * vw for w, vw in zip(self.weights, self.velocities_w)]
@@ -129,6 +149,9 @@ class MLP:
 
 
     def fit(self, X_train, y_train, X_val=None, y_val=None, epochs=100, lr=0.001, patience=None, momentum=None, metrics=None, history=None):
+        """
+        Main training function for the neural network in the MLP object.
+        """
         # One hot encode the true results
         y_train_oh = one_hot_encoder(y_train, 2)
         y_val_oh = one_hot_encoder(y_val, 2)
@@ -167,63 +190,16 @@ class MLP:
         plot_loss_and_accuracy(self.train_losses, self.train_accuracies, self.val_losses, self.val_accuracies)
 
         if metrics is True:
-            #  Train and Validation Confusion matrix
-            tp_train, tn_train, fp_train, fn_train = confusion_matrix(self, X_train, y_train)
-            tp_val, tn_val, fp_val, fn_val = confusion_matrix(self, X_val, y_val)
-
-            print("\nTrain Confusion matrix:")
-            print(f"[{tp_train}, {fp_train}\n{fn_train}, {tn_train}]\n")
-
-            print("Validation Confusion matrix:")
-            print(f"[{tp_val}, {fp_val}\n{fn_val}, {tn_val}]\n")
-
-            # Compute Precision of model
-            train_precision = precision(tp_train, fp_train)
-            val_precision = precision(tp_val, fp_val)
-            print(f"\nTrain Precision: {train_precision}")
-            print(f"Validation Precision: {val_precision}")
-
-            # Compute Recall of model
-            train_recall = recall(tp_train, fn_train)
-            val_recall = recall(tp_val, fn_val)
-            print(f"\nTrain Recall: {train_recall}")
-            print(f"Validation Recall: {val_recall}")
-
-            # Compute F1 of model
-            train_f1 = f1(train_precision, train_recall)
-            val_f1 = f1(val_precision, val_recall)
-            print(f"\nTrain F1: {train_f1}")
-            print(f"Validation F1: {val_f1}")
-
-            # Compute MSE of model
-            train_mse = mse(self, X_train, y_train_oh)
-            val_mse = mse(self, X_val, y_val_oh)
-            print(f"\nTrain MSE: {train_mse}")
-            print(f"Validation MSE: {val_mse}")
+            display_bonus_metrics(self, X_train, y_train, X_val, y_val)
 
         if history is True:
-            # History of training metrics
-            min_train_loss = min(self.train_losses)
-            min_train_loss_epoch = self.train_losses.index(min_train_loss) + 1
-            max_train_acc = max(self.train_accuracies)
-            max_train_acc_epoch = self.train_accuracies.index(max_train_acc) + 1
-
-            # History of validation metrics
-            min_val_loss = min(self.val_losses)
-            min_val_loss_epoch = self.val_losses.index(min_val_loss) + 1
-            max_val_acc = max(self.val_accuracies)
-            max_val_acc_epoch = self.val_accuracies.index(max_val_acc) + 1
-
-            print("\n=== Training Metrics ===")
-            print(f"Minimum Train Loss: {min_train_loss:.4f} at epoch {min_train_loss_epoch}")
-            print(f"Maximum Train Accuracy: {max_train_acc:.4f} at epoch {max_train_acc_epoch}\n")
-
-            print("\n=== Validation Metrics ===")
-            print(f"Minimum Validation Loss: {min_val_loss:.4f} at epoch {min_val_loss_epoch}")
-            print(f"Maximum Validation Accuracy: {max_val_acc:.4f} at epoch {max_val_acc_epoch}")
+            display_history(self)
 
 
     def save_model(self, filepath):
+        """
+        Save the trained model as a json file.
+        """
         model_data = {
             "weights": [w.tolist() for w in self.weights],
             "biases": [b.tolist() for b in self.biases],
