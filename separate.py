@@ -129,6 +129,9 @@ def plot_split_distribution(y_train, y_val):
 
 
 def train_test_split_custom(X, y, test_size=0.2, random_state=None):
+    """
+    Split dataset into train and validation sets.
+    """
     if random_state is not None:
         np.random.seed(random_state)
 
@@ -138,7 +141,7 @@ def train_test_split_custom(X, y, test_size=0.2, random_state=None):
     train_indices = []
     val_indices = []
 
-    # go class by class
+    # Iterate over Malignant/Benign classes
     for cls in np.unique(y):
         cls_indices = np.where(y == cls)[0]
         np.random.shuffle(cls_indices)
@@ -148,7 +151,7 @@ def train_test_split_custom(X, y, test_size=0.2, random_state=None):
         val_indices.extend(cls_indices[:n_val])
         train_indices.extend(cls_indices[n_val:])
 
-    # shuffle final indices to avoid class ordering
+    # Shuffle final indices to avoid class ordering
     np.random.shuffle(train_indices)
     np.random.shuffle(val_indices)
 
@@ -214,7 +217,7 @@ if __name__ == "__main__":
         # Visualize DataFrame on the terminal
         print("\n🔹 First 5 samples of DataFrame: 🔹", df.head())
 
-        Dataset Visualization
+        # Dataset Visualization
         plot_diagnosis_distribution(df)
         plot_correlation_heatmap(df)
         plot_top_correlated_features(df)
