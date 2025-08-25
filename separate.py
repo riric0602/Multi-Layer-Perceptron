@@ -1,7 +1,8 @@
 import os
 import sys
-import pandas as pd
 import argparse
+import pandas as pd
+import numpy as np
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -127,6 +128,36 @@ def plot_split_distribution(y_train, y_val):
     plt.show()
 
 
+def train_test_split_custom(X, y, test_size=0.2, random_state=None):
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    X = np.array(X)
+    y = np.array(y)
+
+    train_indices = []
+    val_indices = []
+
+    # go class by class
+    for cls in np.unique(y):
+        cls_indices = np.where(y == cls)[0]
+        np.random.shuffle(cls_indices)
+
+        n_val = int(len(cls_indices) * test_size)
+
+        val_indices.extend(cls_indices[:n_val])
+        train_indices.extend(cls_indices[n_val:])
+
+    # shuffle final indices to avoid class ordering
+    np.random.shuffle(train_indices)
+    np.random.shuffle(val_indices)
+
+    return (
+        X[train_indices], X[val_indices],
+        y[train_indices], y[val_indices]
+    )
+
+
 def split_dataset(df: DataFrame):
     """
     Split the dataset into train and validation datasets.
@@ -140,9 +171,15 @@ def split_dataset(df: DataFrame):
 
     X_scaled = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42, stratify=y
+    X_train, X_val, y_train, y_val = train_test_split_custom(
+        X_scaled, y, test_size=0.2, random_state=42
     )
+
+    X_train = pd.DataFrame(X_train)
+    X_train["Diagnosis"] = y_train
+    X_val = pd.DataFrame(X_val)
+    X_val["Diagnosis"] = y_val
+
     return X_train, X_val, y_train, y_val
 
 
@@ -177,7 +214,7 @@ if __name__ == "__main__":
         # Visualize DataFrame on the terminal
         print("\n🔹 First 5 samples of DataFrame: 🔹", df.head())
 
-        # Dataset Visualization
+        Dataset Visualization
         plot_diagnosis_distribution(df)
         plot_correlation_heatmap(df)
         plot_top_correlated_features(df)
