@@ -1,5 +1,5 @@
 import sys
-from utils import load_model, close_on_key
+from utils.utils import load_model, close_on_key
 import matplotlib.pyplot as plt
 
 

@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
-from utils import close_on_key
+from utils.utils import close_on_key
 
 COLUMN_NAMES = [
     'Id',

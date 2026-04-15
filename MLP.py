@@ -1,6 +1,6 @@
 import json
-from utils import plot_loss_and_accuracy, display_bonus_metrics, display_history
-from metrics import *
+from utils.utils import plot_loss_and_accuracy, display_bonus_metrics, display_history
+from utils.metrics import *
 
 class MLP:
     def __init__(self, input_size):

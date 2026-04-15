@@ -5,7 +5,7 @@ from MLP import MLP
 import pandas as pd
 import argparse
 from separate import preprocess_dataset, COLUMN_NAMES
-from utils import load_model
+from utils.utils import load_model
 
 
 DATA_FILE = "data.csv"

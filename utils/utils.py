@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import json
-from metrics import one_hot_encoder, confusion_matrix, f1, precision, recall, mse
+from utils.metrics import one_hot_encoder, confusion_matrix, f1, precision, recall, mse
 
 
 def close_on_key(event) -> None:
