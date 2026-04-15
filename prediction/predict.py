@@ -52,7 +52,7 @@ def parse_parameters():
         description="Predict if a given dataset's cells are malignant or benign."
     )
 
-    parser.add_argument("-n", '--model_name', type=str, default="cancer_detection", help="Name of the model to use for prediction.")
+    parser.add_argument("model_name", nargs="?", default="cancer_detection", help="Name of the model to use for prediction (positional argument).")
     return parser.parse_args()
 
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         name = params.model_name
 
         # Load weights and biases
-        weights, biases, activations, _, _, _, _ = load_model(f'{name}.json')
+        weights, biases, activations, _, _, _, _ = load_model(f'models/{name}.json')
 
         # Create model instance with input size based on first layer weights shape
         model = MLP(input_size=weights[0].shape[0])
