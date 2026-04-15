@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score
 from MLP import MLP
 import pandas as pd
 import argparse
-from separate import preprocess_dataset, COLUMN_NAMES
+from data_processing.separate import preprocess_dataset, COLUMN_NAMES
 from utils.utils import load_model
 
 

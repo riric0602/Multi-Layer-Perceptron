@@ -1,6 +1,7 @@
 import os
 import sys
-import argparse
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
 import numpy as np
 from pandas import DataFrame
@@ -196,8 +197,9 @@ def save_split_dataset(X_train, X_val, y_train, y_val):
     val_df = X_val.copy()
     val_df["Diagnosis"] = y_val
 
-    train_df.to_csv("train.csv", index=False)
-    val_df.to_csv("val.csv", index=False)
+    os.makedirs("datasets", exist_ok=True)
+    train_df.to_csv(os.path.join("datasets", "train.csv"), index=False)
+    val_df.to_csv(os.path.join("datasets", "val.csv"), index=False)
 
 
 if __name__ == "__main__":
