@@ -1,14 +1,19 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, precision_score
-from MLP import MLP
 import pandas as pd
 import argparse
+from sklearn.metrics import accuracy_score, precision_score
+
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from training.MLP import MLP
 from data_processing.separate import preprocess_dataset, COLUMN_NAMES
 from utils.utils import load_model
 
 
-DATA_FILE = "data.csv"
+DATA_FILE = "datasets/data.csv"
 
 
 def read_and_scale_data():

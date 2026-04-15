@@ -1,4 +1,9 @@
 import json
+import os
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils.utils import plot_loss_and_accuracy, display_bonus_metrics, display_history
 from utils.metrics import *
 

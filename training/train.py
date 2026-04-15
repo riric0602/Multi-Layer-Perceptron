@@ -60,9 +60,12 @@ def get_train_validation_sets():
     """
     Retrieve training and validation sets.
     """
-    if os.path.exists("train.csv") and os.path.exists("val.csv"):
-        train_df = pd.read_csv("train.csv")
-        val_df = pd.read_csv("val.csv")
+
+    train_path = os.path.join("datasets", "train.csv")
+    val_path = os.path.join("datasets", "val.csv")
+    if os.path.exists(train_path) and os.path.exists(val_path):
+        train_df = pd.read_csv(train_path)
+        val_df = pd.read_csv(val_path)
 
         X_train = train_df.drop(columns=["Diagnosis"])
         y_train = train_df["Diagnosis"]
@@ -128,9 +131,11 @@ if __name__ == "__main__":
             history=history
         )
 
-        # Save trained MLP model
-        model.save_model(f"{name}.json")
-        print(f"\nModel '{name}.json' saved locally.")
+        # Save trained MLP model in 'models' folder
+        os.makedirs("models", exist_ok=True)
+        model_path = os.path.join("models", f"{name}.json")
+        model.save_model(model_path)
+        print(f"\nModel '{model_path}' saved locally.")
 
     except Exception as e:
         print(f"Error: {e}")
