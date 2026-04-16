@@ -247,13 +247,17 @@ if __name__ == "__main__":
         print("\n🔹 First 5 samples of DataFrame: 🔹", df.head())
 
         # Dataset Visualization
-        top_features = get_top_correlations(df, 10)
-
         plot_diagnosis_distribution(df)
+
+        top_features = get_top_correlations(df, 10)
+        print("\nTop 10 features most correlated with Diagnosis:")
+        for feature, value in top_features.items():
+            print(f"- {feature}: {value:.4f}")
+
         plot_correlation_heatmap(df, top_features)
         plot_top_correlated_features(df, top_features)
         plot_pair_plot(df, top_features)
-
+        
         # Split into train/validation sets and save them as .csv
         X_train, X_val, y_train, y_val = split_dataset(df)
         save_split_dataset(X_train, X_val, y_train, y_val)
