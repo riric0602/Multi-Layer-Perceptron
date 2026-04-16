@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import json
+from pandas import DataFrame
 from utils.metrics import one_hot_encoder, confusion_matrix, f1, precision, recall, mse
 
 
@@ -10,6 +11,14 @@ def close_on_key(event) -> None:
     """
     if event.key == 'escape':
         plt.close(event.canvas.figure)
+
+
+def get_top_correlations(df: DataFrame, n=10):
+    "Get top correlated features with Diagnosis"
+    correlations = df.corr(numeric_only=True)['Diagnosis'].drop('Diagnosis')
+    return correlations.reindex(
+        correlations.abs().sort_values(ascending=False).head(n).index
+    )
 
 
 def plot_loss_and_accuracy(train_losses, train_accuracies, val_losses, val_accuracies):

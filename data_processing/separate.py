@@ -6,10 +6,9 @@ import pandas as pd
 import numpy as np
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
-from utils.utils import close_on_key
+from utils.utils import close_on_key, get_top_correlations
 
 COLUMN_NAMES = [
     'Id',
@@ -20,18 +19,43 @@ COLUMN_NAMES = [
 ]
 
 
+def load_dataset(data_path: str) -> DataFrame:
+    """
+    Load the dataset without dropping the first sample.
+    """
+    df = pd.read_csv(data_path, header=None)
+
+    if df.shape[1] != len(COLUMN_NAMES):
+        raise ValueError(
+            f"Expected {len(COLUMN_NAMES)} columns, found {df.shape[1]}."
+        )
+
+    df.columns = COLUMN_NAMES
+    return df
+
+
 def preprocess_dataset(df: DataFrame):
     """
-    Preprocess dataset by converting diagnosis into 0/1 (Benign/Malignant).
-    Remove any null values and drop the ID column.
+    Preprocess dataset by converting diagnosis into 0/1 (Benign/Malignant),
+    converting features to numeric values, and removing invalid rows.
     """
+    df = df.copy()
     df.drop(columns=['Id'], inplace=True, errors='ignore')
-    df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1})
+
+    df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1, 0: 0, 1: 1, '0': 0, '1': 1})
+
+    feature_columns = [column for column in df.columns if column != 'Diagnosis']
+    for column in feature_columns:
+        df[column] = pd.to_numeric(df[column], errors='coerce')
 
     if df.isnull().values.any():
-        print("Warning: Dataset contains missing values.")
+        print("Warning: Dataset contains invalid or missing values. Dropping affected rows.")
         df.dropna(inplace=True)
 
+    if not set(df['Diagnosis'].unique()).issubset({0, 1}):
+        raise ValueError("Diagnosis column must contain only B/M or 0/1 values.")
+
+    df['Diagnosis'] = df['Diagnosis'].astype(int)
     return df
 
 
@@ -50,16 +74,13 @@ def plot_diagnosis_distribution(df: DataFrame):
 
 def plot_correlation_heatmap(df: DataFrame):
     """
-    Plot correlation heatmap of the 10 middle features of the dataset.
-    This plot shows how proportionate some variables are with the diagnosis.
+    Plot a correlation heatmap of the features most related to diagnosis.
     """
-    # Select the columns to be used in the HeatMap Plot
-    middle_10_features = df.columns[12:22]
-    selected_columns = ['Diagnosis'] + list(middle_10_features)
+    top_features = get_top_correlations(df, 10)
+    selected_columns = ['Diagnosis'] + list(top_features.index)
 
-    # Create the correlation matrix
     df_corr = df[selected_columns]
-    corr_matrix = df_corr.corr()
+    corr_matrix = df_corr.corr(numeric_only=True)
 
     fig = plt.figure(figsize=(12, 5))
     sns.heatmap(corr_matrix, cmap="coolwarm", annot=False)
@@ -70,23 +91,21 @@ def plot_correlation_heatmap(df: DataFrame):
 
 def plot_top_correlated_features(df):
     """
-    Plot the most correlated features of the dataset with the Malignant diagnosis.
+    Plot the features most strongly correlated with the diagnosis.
     """
-    # Get positive correlations with target -> Malignant correlations
-    correlations = df.corr()['Diagnosis'].drop('Diagnosis').sort_values()
-    positive_values = correlations[correlations > 0].sort_values(ascending=False)
+    strongest_values = get_top_correlations(df, 10).sort_values()
 
     fig = plt.figure(figsize=(8, 5))
     sns.barplot(
-        x=positive_values.values,
-        y=positive_values.index,
-        palette='Reds',
-        hue=positive_values.index,
+        x=strongest_values.values,
+        y=strongest_values.index,
+        palette='coolwarm',
+        hue=strongest_values.index,
         legend=False,
     )
     fig.canvas.mpl_connect('key_press_event', close_on_key)
-    plt.title("Top Features Associated with Malignant Diagnosis")
-    plt.xlabel("Correlation with Diagnosis (1 = Malignant)")
+    plt.title("Features Most Correlated with Diagnosis")
+    plt.xlabel("Correlation with Diagnosis")
     plt.tight_layout()
     plt.show()
 
@@ -166,23 +185,15 @@ def split_dataset(df: DataFrame):
     """
     Split the dataset into train and validation datasets.
     """
-    # Convert dataframe into input and output
     X = df.drop(columns=['Diagnosis'])
     y = df['Diagnosis']
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
-
-    X_train, X_val, y_train, y_val = train_test_split_custom(
-        X_scaled, y, test_size=0.2, random_state=42
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    X_train = pd.DataFrame(X_train)
-    X_train["Diagnosis"] = y_train
-    X_val = pd.DataFrame(X_val)
-    X_val["Diagnosis"] = y_val
+    X_train = pd.DataFrame(X_train, columns=X.columns)
+    X_val = pd.DataFrame(X_val, columns=X.columns)
 
     return X_train, X_val, y_train, y_val
 
@@ -213,7 +224,7 @@ if __name__ == "__main__":
             raise ValueError("Dataset file does not exist. Provide it in directory and try again.")
 
         # Load and clean the data
-        df = pd.read_csv(data_path, names=COLUMN_NAMES, header=0)
+        df = load_dataset(data_path)
         df = preprocess_dataset(df)
 
         # Visualize DataFrame on the terminal
