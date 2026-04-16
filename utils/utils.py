@@ -15,9 +15,18 @@ def close_on_key(event) -> None:
 
 def get_top_correlations(df: DataFrame, n=10):
     "Get top correlated features with Diagnosis"
-    correlations = df.corr(numeric_only=True)['Diagnosis'].drop('Diagnosis')
+    correlations = (
+        df
+            .corr(numeric_only=True)['Diagnosis']
+            .drop('Diagnosis')
+    )
+
     return correlations.reindex(
-        correlations.abs().sort_values(ascending=False).head(n).index
+        correlations
+            .abs()
+            .sort_values(ascending=False)
+            .head(n)
+            .index
     )
 
 

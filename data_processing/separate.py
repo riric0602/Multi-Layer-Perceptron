@@ -72,11 +72,10 @@ def plot_diagnosis_distribution(df: DataFrame):
     plt.show()
 
 
-def plot_correlation_heatmap(df: DataFrame):
+def plot_correlation_heatmap(df: DataFrame, top_features):
     """
     Plot a correlation heatmap of the features most related to diagnosis.
     """
-    top_features = get_top_correlations(df, 10)
     selected_columns = ['Diagnosis'] + list(top_features.index)
 
     df_corr = df[selected_columns]
@@ -89,11 +88,11 @@ def plot_correlation_heatmap(df: DataFrame):
     plt.show()
 
 
-def plot_top_correlated_features(df):
+def plot_top_correlated_features(df: DataFrame, top_features):
     """
     Plot the features most strongly correlated with the diagnosis.
     """
-    strongest_values = get_top_correlations(df, 10).sort_values()
+    strongest_values = top_features.sort_values()
 
     fig = plt.figure(figsize=(8, 5))
     sns.barplot(
@@ -110,14 +109,31 @@ def plot_top_correlated_features(df):
     plt.show()
 
 
-def plot_pair_plot(df: DataFrame):
+def plot_pair_plot(df: DataFrame, top_features):
     """
     Plot the pair plot of the dataset with 5 chosen variables.
     """
+    top_feature_names = list(top_features.index[:2])
+
+    correlations = (
+        df
+            .corr(numeric_only=True)['Diagnosis']
+            .drop('Diagnosis')
+            .abs()
+    )
+    
+    low_features = list(
+        correlations
+            .drop(top_feature_names)
+            .sort_values(ascending=True)
+            .head(2)
+            .index
+    )
+
+    selected_columns = top_feature_names + low_features + ['Diagnosis']
+
     plot = sns.pairplot(
-        df[
-            ['Radius Mean', 'Texture Mean', 'Perimeter Mean', 'Area Mean', 'Diagnosis']
-        ],
+        df[selected_columns],
         height=2.5,
         aspect = 1.5,
         palette='Set2',
@@ -231,10 +247,12 @@ if __name__ == "__main__":
         print("\n🔹 First 5 samples of DataFrame: 🔹", df.head())
 
         # Dataset Visualization
+        top_features = get_top_correlations(df, 10)
+
         plot_diagnosis_distribution(df)
-        plot_correlation_heatmap(df)
-        plot_top_correlated_features(df)
-        plot_pair_plot(df)
+        plot_correlation_heatmap(df, top_features)
+        plot_top_correlated_features(df, top_features)
+        plot_pair_plot(df, top_features)
 
         # Split into train/validation sets and save them as .csv
         X_train, X_val, y_train, y_val = split_dataset(df)
