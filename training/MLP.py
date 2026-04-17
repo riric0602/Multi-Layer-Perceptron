@@ -37,7 +37,7 @@ class MLP:
         np.random.seed(1)
 
 
-    def add_layer(self, num_neurons, activation='sigmoid'):
+    def add_layer(self, num_neurons, activation='relu'):
         """
         Add a neural network layer to the MLP object.
         """
@@ -47,9 +47,13 @@ class MLP:
         # Weight and bias initialization
         bias = np.zeros(num_neurons)
 
-        if activation in ['sigmoid', 'softmax']:
+        if activation in ['softmax']:
             # Random initialization
             weight = np.random.randn(input_dim, num_neurons)
+        elif activation in ['sigmoid']:
+            # Xavier initialization
+            limit = np.sqrt(6. / (input_dim + num_neurons))
+            weight = np.random.uniform(-limit, limit, (input_dim, num_neurons))
         elif activation == 'tanh':
             # Xavier Initialization
             limit = np.sqrt(1. / input_dim)
@@ -93,8 +97,6 @@ class MLP:
             return 1 - a ** 2
         elif activation == 'relu':
             return (a > 0).astype(float)
-        elif activation == 'softmax':
-            raise ValueError("Softmax derivative is handled implicitly with cross-entropy.")
         else:
             raise ValueError("Unsupported activation.")
 
@@ -116,33 +118,29 @@ class MLP:
 
 
     def backpropagation(self, y, lr, momentum):
-        """
-        Backpropagate a neural network using gradient descent to optimize weights and biases.
-        """
         num_layers = len(self.layers)
         m = y.shape[0]
-        X = self.a_s[-1]
 
-        # Chain Rule Computation with derivatives
-        delta = X - y
+        p = self.a_s[-1]
+        delta = (p - y)
+
         for i in reversed(range(num_layers)):
-            # Compute Weights / Biases Gradient Descent
             dw = np.dot(self.a_s[i].T, delta) / m
             db = np.sum(delta, axis=0) / m
 
             if i > 0:
-                delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(self.a_s[i], self.activation_funcs[i - 1])
+                delta = np.dot(delta, self.weights[i].T) * self.activation_derivative(
+                    self.a_s[i],
+                    self.activation_funcs[i - 1]
+                )
 
+            # momentum / weight update
             if momentum is not None:
-                # Momentum update
                 self.velocities_w[i] = momentum * self.velocities_w[i] + lr * dw
                 self.velocities_b[i] = momentum * self.velocities_b[i] + lr * db
-
-                # Update weights and biases
                 self.weights[i] -= self.velocities_w[i]
                 self.biases[i] -= self.velocities_b[i]
             else:
-                # Update weights and biases
                 self.weights[i] -= lr * dw
                 self.biases[i] -= lr * db
 

@@ -93,13 +93,15 @@ def load_model(filepath):
 
     weights = [np.array(w) for w in model_data["weights"]]
     biases = [np.array(b) for b in model_data["biases"]]
-    activations = [a for a in model_data["activations"]]
-    train_losses = [a for a in model_data["train_loss_history"]]
-    val_losses = [a for a in model_data["val_loss_history"]]
-    train_accuracies = [a for a in model_data["train_accuracy_history"]]
-    val_accuracies = [a for a in model_data["val_accuracy_history"]]
+    activations = model_data["activations"]
+    train_losses = model_data["train_loss_history"]
+    val_losses = model_data["val_loss_history"]
+    train_accuracies = model_data["train_accuracy_history"]
+    val_accuracies = model_data["val_accuracy_history"]
+    scaler_mean = np.array(model_data["scaler_mean"])
+    scaler_std = np.array(model_data["scaler_std"])
 
-    return weights, biases, activations, train_losses, val_losses, train_accuracies, val_accuracies
+    return weights, biases, activations, scaler_mean, scaler_std, train_losses, val_losses, train_accuracies, val_accuracies
 
 
 def display_bonus_metrics(model, X_train, y_train, X_val, y_val):
