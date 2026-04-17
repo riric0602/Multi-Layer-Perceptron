@@ -1,5 +1,6 @@
 import json
 import os
+import copy
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -13,18 +14,24 @@ class MLP:
         Initialization of the MLP object with input size.
         """
         self.input_size = input_size
-        self.layers = []              # list of neuron counts per layer
-        self.activation_funcs = []    # activation function names per layer
-        self.weights = []              # weight matrices
-        self.biases = []               # bias vectors
-        self.z_s = []  # pre-activation values
-        self.a_s = []  # activation outputs
-        self.velocities_w = [] # weights velocity
-        self.velocities_b = [] # biases velocity
+        self.layers = []           # list of neuron counts per layer
+        self.activation_funcs = [] # activation function names per layer
+        self.weights = []          # weight matrices
+        self.biases = []           # bias vectors
+        self.z_s = []              # pre-activation values
+        self.a_s = []              # activation outputs
+        self.velocities_w = []     # weights velocity
+        self.velocities_b = []     # biases velocity
         self.train_losses = []
         self.val_losses = []
         self.train_accuracies = []
         self.val_accuracies = []
+        self.train_precisions = []
+        self.val_precisions = []
+        self.train_recalls = []
+        self.val_recalls = []
+        self.train_f1_scores = []
+        self.val_f1_scores = []
         np.random.seed(1)
 
 
@@ -162,9 +169,11 @@ class MLP:
         y_val_oh = one_hot_encoder(y_val, 2)
 
         # Early stopping and Nesterov Optimization variables
-        min_delta = 0.01
+        min_delta = 1e-4
         patience_counter = 0
         best_loss = float('inf')
+        best_weights = copy.deepcopy(self.weights)
+        best_biases = copy.deepcopy(self.biases)
         self.velocities_w = [np.zeros_like(w) for w in self.weights]
         self.velocities_b = [np.zeros_like(b) for b in self.biases]
 
@@ -172,25 +181,50 @@ class MLP:
             self.learning_algorithm(X_train, y_train_oh, lr, momentum)
 
             # Compute training and validation metrics
-            train_loss, train_acc = loss_and_accuracy(self, X_train, y_train)
-            self.train_losses.append(train_loss)
-            self.train_accuracies.append(train_acc)
+            train_metrics = classification_metrics(self, X_train, y_train)
+            self.train_losses.append(train_metrics["loss"])
+            self.train_accuracies.append(train_metrics["accuracy"])
+            self.train_precisions.append(train_metrics["precision"])
+            self.train_recalls.append(train_metrics["recall"])
+            self.train_f1_scores.append(train_metrics["f1"])
 
-            val_loss, val_acc = loss_and_accuracy(self, X_val, y_val)
-            self.val_losses.append(val_loss)
-            self.val_accuracies.append(val_acc)
+            val_metrics = classification_metrics(self, X_val, y_val)
+            self.val_losses.append(val_metrics["loss"])
+            self.val_accuracies.append(val_metrics["accuracy"])
+            self.val_precisions.append(val_metrics["precision"])
+            self.val_recalls.append(val_metrics["recall"])
+            self.val_f1_scores.append(val_metrics["f1"])
 
             if patience is not None:
-                if val_loss < best_loss - min_delta:
-                    best_loss = val_loss
+                if val_metrics["loss"] < best_loss - min_delta:
+                    best_loss = val_metrics["loss"]
+                    best_weights = copy.deepcopy(self.weights)
+                    best_biases = copy.deepcopy(self.biases)
                     patience_counter = 0
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
-                        print(f"Early stopping at epoch {epoch}")
+                        self.weights = best_weights
+                        self.biases = best_biases
+                        print(f"Early stopping at epoch {epoch + 1}. Restored best validation-loss weights.")
                         break
 
-            print(f"Epoch: {epoch + 1}/{epochs} - loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - accuracy: {train_acc:.4f} - val_accuracy: {val_acc:.4f}")
+            print(
+                f"Epoch: {epoch + 1}/{epochs}"
+                f" - loss: {train_metrics['loss']:.4f}"
+                f" - val_loss: {val_metrics['loss']:.4f}"
+                f" - accuracy: {train_metrics['accuracy']:.4f}"
+                f" - val_accuracy: {val_metrics['accuracy']:.4f}"
+                f" - precision: {val_metrics['precision']:.4f}"
+                f" - recall: {val_metrics['recall']:.4f}"
+                f" - f1: {val_metrics['f1']:.4f}"
+            )
+
+        if patience is not None and self.val_losses:
+            best_epoch = int(np.argmin(self.val_losses))
+            self.weights = best_weights
+            self.biases = best_biases
+            print(f"Best validation loss kept from epoch {best_epoch + 1}.")
 
         plot_loss_and_accuracy(self.train_losses, self.train_accuracies, self.val_losses, self.val_accuracies)
 
@@ -206,6 +240,8 @@ class MLP:
         Save the trained model as a json file.
         """
         model_data = {
+            "input_size": self.input_size,
+            "layers": self.layers,
             "weights": [w.tolist() for w in self.weights],
             "biases": [b.tolist() for b in self.biases],
             "activations": [a for a in self.activation_funcs],
@@ -213,6 +249,12 @@ class MLP:
             "val_loss_history": self.val_losses,
             "train_accuracy_history": self.train_accuracies,
             "val_accuracy_history": self.val_accuracies,
+            "train_precision_history": self.train_precisions,
+            "val_precision_history": self.val_precisions,
+            "train_recall_history": self.train_recalls,
+            "val_recall_history": self.val_recalls,
+            "train_f1_history": self.train_f1_scores,
+            "val_f1_history": self.val_f1_scores,
         }
 
         with open(filepath, "w") as f:

@@ -33,6 +33,30 @@ def loss_and_accuracy(model, X, y_true):
     return loss, acc
 
 
+def classification_metrics(model, X, y_true):
+    """
+    Compute classification metrics for a trained model.
+    """
+    loss, acc = loss_and_accuracy(model, X, y_true)
+    tp, tn, fp, fn = confusion_matrix(model, X, y_true)
+
+    prec = precision(tp, fp)
+    rec = recall(tp, fn)
+    f1_score = f1(prec, rec)
+
+    return {
+        "loss": loss,
+        "accuracy": acc,
+        "precision": prec,
+        "recall": rec,
+        "f1": f1_score,
+        "tp": tp,
+        "tn": tn,
+        "fp": fp,
+        "fn": fn,
+    }
+
+
 def confusion_matrix(model, X, y_true):
     """
     Compute the confusion matrix of the model.
@@ -53,21 +77,24 @@ def precision(tp, fp):
     """
     Compute the precision of the model.
     """
-    return tp / (tp + fp)
+    denominator = tp + fp
+    return tp / denominator if denominator else 0.0
 
 
 def recall(tp, fn):
     """
     Compute the recall of the model.
     """
-    return tp / (tp + fn)
+    denominator = tp + fn
+    return tp / denominator if denominator else 0.0
 
 
 def f1(precision, recall):
     """
     Compute the F1 score of the model.
     """
-    return 2 * precision * recall / (precision + recall)
+    denominator = precision + recall
+    return 2 * precision * recall / denominator if denominator else 0.0
 
 
 def mse(model, X, y_true):
@@ -76,4 +103,3 @@ def mse(model, X, y_true):
     """
     y_pred = model.feedforward(X, model.weights, model.biases)
     return np.mean((y_true - y_pred)**2)
-
