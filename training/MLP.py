@@ -14,14 +14,16 @@ class MLP:
         Initialization of the MLP object with input size.
         """
         self.input_size = input_size
-        self.layers = []           # list of neuron counts per layer
-        self.activation_funcs = [] # activation function names per layer
-        self.weights = []          # weight matrices
-        self.biases = []           # bias vectors
-        self.z_s = []              # pre-activation values
-        self.a_s = []              # activation outputs
-        self.velocities_w = []     # weights velocity
-        self.velocities_b = []     # biases velocity
+        self.layers = []              # list of neuron counts per layer
+        self.activation_funcs = []    # activation function names per layer
+        self.weights = []             # weight matrices
+        self.biases = []              # bias vectors
+        self.z_s = []                 # pre-activation values
+        self.a_s = []                 # activation outputs
+        self.velocities_w = []        # weights velocity
+        self.velocities_b = []        # biases velocity
+        self.scaler_mean = 0
+        self.scaler_std = 0
         self.train_losses = []
         self.val_losses = []
         self.train_accuracies = []
@@ -245,6 +247,8 @@ class MLP:
             "weights": [w.tolist() for w in self.weights],
             "biases": [b.tolist() for b in self.biases],
             "activations": [a for a in self.activation_funcs],
+            "scaler_mean": self.scaler_mean.tolist(),
+            "scaler_std": self.scaler_std.tolist(),
             "train_loss_history": self.train_losses,
             "val_loss_history": self.val_losses,
             "train_accuracy_history": self.train_accuracies,

@@ -5,7 +5,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
 import numpy as np
 from pandas import DataFrame
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 from utils.utils import close_on_key, get_top_correlations
@@ -177,35 +176,38 @@ def train_test_split_custom(X, y, test_size=0.2, random_state=None):
     train_indices = []
     val_indices = []
 
-    # Iterate over Malignant/Benign classes
-    for cls in np.unique(y):
+    classes = np.unique(y)
+
+    for cls in classes:
         cls_indices = np.where(y == cls)[0]
         np.random.shuffle(cls_indices)
 
-        n_val = int(len(cls_indices) * test_size)
+        n_val = max(1, round(len(cls_indices) * test_size))
 
         val_indices.extend(cls_indices[:n_val])
         train_indices.extend(cls_indices[n_val:])
 
-    # Shuffle final indices to avoid class ordering
+    # Final shuffle to mix classes
     np.random.shuffle(train_indices)
     np.random.shuffle(val_indices)
 
     return (
-        X[train_indices], X[val_indices],
-        y[train_indices], y[val_indices]
+        X[train_indices],
+        X[val_indices],
+        y[train_indices],
+        y[val_indices]
     )
 
 
-def split_dataset(df: DataFrame):
+def split_dataset(df: DataFrame, test_size=0.2):
     """
     Split the dataset into train and validation datasets.
     """
     X = df.drop(columns=['Diagnosis'])
     y = df['Diagnosis']
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    X_train, X_val, y_train, y_val = train_test_split_custom(
+        X, y, test_size=test_size, random_state=42
     )
 
     X_train = pd.DataFrame(X_train, columns=X.columns)
@@ -261,6 +263,8 @@ if __name__ == "__main__":
         # Split into train/validation sets and save them as .csv
         X_train, X_val, y_train, y_val = split_dataset(df)
         save_split_dataset(X_train, X_val, y_train, y_val)
+
+        print("\nTrain and Validation datasets saved in datasets directory.")
 
         plot_split_distribution(y_train, y_val)
 

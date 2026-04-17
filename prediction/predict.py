@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import argparse
 from sklearn.metrics import accuracy_score, precision_score
@@ -16,21 +15,23 @@ from utils.utils import load_model
 DATA_FILE = "datasets/data.csv"
 
 
-def read_and_scale_data():
+def read_and_scale_data(mean, std):
     """
     Read and scale the given dataset to be predicted.
     """
-    # Load and preprocess the dataset
     df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
     dataset = preprocess_dataset(df)
 
-    X_predict = dataset.drop(columns=['Diagnosis'])
-    y_true = dataset['Diagnosis'].values.reshape(-1, 1)
+    X = dataset.drop(columns=['Diagnosis']).values.astype(np.float32)
+    y = dataset['Diagnosis'].values.reshape(-1, 1)
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_predict)
+    mean = np.array(mean)
+    std = np.array(std)
+    std = np.where(std == 0, 1.0, std)
 
-    return X_scaled, y_true
+    X_scaled = (X - mean) / std
+
+    return X_scaled, y
 
 
 def binary_cross_entropy(y_true, y_pred):
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         name = params.model_name
 
         # Load weights and biases
-        weights, biases, activations, _, _, _, _ = load_model(f'models/{name}.json')
+        weights, biases, activations, scaler_mean, scaler_std, _, _ = load_model(f'models/{name}.json')
 
         # Create model instance with input size based on first layer weights shape
         model = MLP(input_size=weights[0].shape[0])
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 
         print("Model loaded successfully !")
 
-        X_scaled, y_true = read_and_scale_data()
+        X_scaled, y_true = read_and_scale_data(mean=model.scaler_mean, std=model.scaler_std)
         probs = model.feedforward(X_scaled, model.weights, model.biases)
         probs_binary = probs[:, 1].reshape(-1, 1)
 

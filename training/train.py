@@ -15,7 +15,7 @@ def parse_parameters():
     parser.add_argument("-l", '--add_layers', type=int, nargs="+", default=[24, 24, 24], help="Layers' sizes to add.")
     parser.add_argument('-a', '--activations', type=str, nargs="+", help="Learning rate for training.")
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.01, help="Learning rate for training.")
-    parser.add_argument('-e', '--epochs', type=int, default=1000, help="Number of epochs to train.")
+    parser.add_argument('-e', '--epochs', type=int, default=500, help="Number of epochs to train.")
     parser.add_argument('-es', '--early_stop', type=int, default=None, help="Number of epochs to stop before overfitting.")
     parser.add_argument('-m', '--nesterov', type=float, default=None,
                         help="Momentum lookahead for the nesterov optimization.")
@@ -89,10 +89,11 @@ def standarize_datasets(X_train, y_train, X_val, y_val):
     mean = np.mean(X_train, axis=0, keepdims=True)
     std = np.std(X_train, axis=0, keepdims=True)
     std = np.where(std == 0, 1.0, std)
+
     X_train = (X_train - mean) / std
     X_val = (X_val - mean) / std
 
-    return X_train, y_train, X_val, y_val
+    return X_train, y_train, X_val, y_val, mean, std
 
 
 if __name__ == "__main__":
@@ -102,11 +103,13 @@ if __name__ == "__main__":
         layers, activations, learning_rate, epochs, early_stop, momentum, name, metrics, history = get_parameters(params)
 
         # Retrieve training and validation sets
-        X_train, y_train, X_val, y_val = get_train_validation_sets()
+        X_train, y_train, X_val, y_val, mean, std = get_train_validation_sets()
 
         # Initialize the model
         input_size = X_train.shape[1]
         model = MLP(input_size)
+        model.scaler_mean = mean
+        model.scaler_std = std
 
         for layer, activation in zip(layers, activations):
             if activation:
