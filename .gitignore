@@ -5,3 +5,4 @@ __pycache__/
 train.csv
 val.csv
 venv/
+*/__pycache__/

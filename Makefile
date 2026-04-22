@@ -1,3 +1,6 @@
+create-venv:
+	~/.local/bin/virtualenv venv
+
 install:
 	pip install -r requirements.txt
 
