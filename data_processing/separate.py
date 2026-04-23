@@ -80,7 +80,7 @@ def plot_correlation_heatmap(df: DataFrame, top_features):
     selected_columns = ['Diagnosis_num'] + list(top_features.index)
 
     corr_matrix = df[selected_columns].corr(numeric_only=True)
-    
+
     corr_matrix = corr_matrix.rename(columns={'Diagnosis_num': 'Diagnosis'},
                                      index={'Diagnosis_num': 'Diagnosis'})
 
@@ -251,7 +251,7 @@ def save_split_dataset(X_train, X_val, y_train, y_val):
 
 
 if __name__ == "__main__":
-    # try:
+    try:
         if len(sys.argv) == 2:
             data_path = sys.argv[1]
         else:
@@ -287,5 +287,5 @@ if __name__ == "__main__":
 
         plot_split_distribution(y_train, y_val)
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
