@@ -61,18 +61,22 @@ def get_train_validation_sets():
     Retrieve training and validation sets.
     """
 
-    train_path = os.path.join("datasets", "train.csv")
-    val_path = os.path.join("datasets", "val.csv")
+    train_path = os.path.join("datasets", "data_test.csv")
+    val_path = os.path.join("datasets", "data_training.csv")
+    
     if os.path.exists(train_path) and os.path.exists(val_path):
-        train_df = pd.read_csv(train_path)
-        val_df = pd.read_csv(val_path)
 
-        X_train = train_df.drop(columns=["Diagnosis"])
-        y_train = train_df["Diagnosis"]
-        X_val = val_df.drop(columns=["Diagnosis"])
-        y_val = val_df["Diagnosis"]
+        train_df = pd.read_csv(train_path, header=None)
+        val_df = pd.read_csv(val_path, header=None)
+
+        y_train = train_df.iloc[:, 1].map({"M": 1, "B": 0})
+        X_train = train_df.iloc[:, 2:]
+
+        y_val = val_df.iloc[:, 1].map({"M": 1, "B": 0})
+        X_val = val_df.iloc[:, 2:]
 
         return standarize_datasets(X_train, y_train, X_val, y_val)
+
     else:
         raise ValueError("Train and Validation datasets do not exist. Run separate.py script.")
 
