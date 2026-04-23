@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from training.MLP import MLP
 from data_processing.separate import preprocess_dataset, COLUMN_NAMES
-from utils.utils import load_model
+from utils.utils import COLOR, pct, c, load_model
 
 
 DATA_FILE = "datasets/data.csv"
@@ -92,9 +92,9 @@ if __name__ == "__main__":
         acc = accuracy_score(y_true, y_pred)
         precision = precision_score(y_true, y_pred)
 
-        print("\n--------------Prediction Metrics:--------------")
-        print(f"Binary Cross-Entropy Loss: {loss:.4f}")
-        print(f"Accuracy:  {acc:.4f}")
-        print(f"Precision: {precision:.4f}")
+        print(f"\n{c('-------------- Prediction Metrics --------------', COLOR.BOLD)}")
+        print(f"{c('Binary Cross Entropy', COLOR.YELLOW)}:      {loss:.4f}")
+        print(f"{c('Accuracy', COLOR.GREEN)}:  {pct(acc)}")
+        print(f"{c('Precision', COLOR.CYAN)}: {pct(precision)}")
     except Exception as e:
         print(f"Error: {e}")

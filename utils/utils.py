@@ -124,10 +124,16 @@ def load_model(filepath):
 
 
 def pct(x):
+    """
+    Percentage function
+    """
     return f"{x * 100:.5f}%"
 
 
 def print_metrics_block(title, metrics, color):
+    """
+    Print bonus metrics with colors
+    """
     print(f"\n{c(f'=== {title} ===', color)}")
     print(f"{c('Accuracy', COLOR.GREEN)}:  {pct(metrics['accuracy'])}")
     print(f"{c('Precision', COLOR.CYAN)}: {pct(metrics['precision'])}")
@@ -137,6 +143,9 @@ def print_metrics_block(title, metrics, color):
 
 
 def print_confusion(title, tp, tn, fp, fn, color):
+    """
+    Print confusion Matrix
+    """
     print(f"\n{c(f'=== {title} Confusion Matrix ===', color)}")
     print(f"{c('TP', COLOR.GREEN)}: {tp} | {c('FP', COLOR.RED)}: {fp}")
     print(f"{c('FN', COLOR.RED)}: {fn} | {c('TN', COLOR.GREEN)}: {tn}")
