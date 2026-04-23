@@ -19,14 +19,15 @@ COLUMN_NAMES = [
 
 
 def load_dataset(data_path: str) -> DataFrame:
-    """
-    Load the dataset without dropping the first sample.
-    """
     df = pd.read_csv(data_path, header=None)
+
+    if df.iloc[0, 0] == 'Id' or df.iloc[0, 1] == 'Diagnosis':
+        df = df.iloc[1:].reset_index(drop=True)
 
     if df.shape[1] != len(COLUMN_NAMES):
         raise ValueError(
-            f"Expected {len(COLUMN_NAMES)} columns, found {df.shape[1]}."
+            f"Expected {len(COLUMN_NAMES)} columns, found {df.shape[1]}.\n"
+            f"Actual columns: {df.shape[1]}"
         )
 
     df.columns = COLUMN_NAMES
@@ -39,22 +40,21 @@ def preprocess_dataset(df: DataFrame):
     converting features to numeric values, and removing invalid rows.
     """
     df = df.copy()
-    df.drop(columns=['Id'], inplace=True, errors='ignore')
 
-    df['Diagnosis'] = df['Diagnosis'].map({'B': 0, 'M': 1, 0: 0, 1: 1, '0': 0, '1': 1})
+    df['Diagnosis'] = df['Diagnosis'].astype(str).str.strip()
 
-    feature_columns = [column for column in df.columns if column != 'Diagnosis']
-    for column in feature_columns:
-        df[column] = pd.to_numeric(df[column], errors='coerce')
+    df['Diagnosis_raw'] = df['Diagnosis']
+    df['Diagnosis_num'] = df['Diagnosis'].map({'M': 1, 'B': 0})
 
-    if df.isnull().values.any():
-        print("Warning: Dataset contains invalid or missing values. Dropping affected rows.")
-        df.dropna(inplace=True)
+    feature_columns = [c for c in df.columns if c not in ['Id', 'Diagnosis', 'Diagnosis_raw', 'Diagnosis_num']]
 
-    if not set(df['Diagnosis'].unique()).issubset({0, 1}):
-        raise ValueError("Diagnosis column must contain only B/M or 0/1 values.")
+    for c in feature_columns:
+        df[c] = pd.to_numeric(df[c], errors='coerce')
 
-    df['Diagnosis'] = df['Diagnosis'].astype(int)
+    df.dropna(inplace=True)
+
+    print(df['Diagnosis_raw'].value_counts()) 
+
     return df
 
 
@@ -63,11 +63,13 @@ def plot_diagnosis_distribution(df: DataFrame):
     Plot distribution of diagnosis values in the main dataset.
     """
     plot = sns.countplot(
-        x='Diagnosis',
-        hue='Diagnosis',
-        data=df)
+        x='Diagnosis_raw',
+        data=df,
+        palette={'B': 'skyblue', 'M': 'salmon'}
+    )
+
     plot.figure.canvas.mpl_connect('key_press_event', close_on_key)
-    plt.title("Diagnosis Class Distribution (0 = Benign, 1 = Malignant)")
+    plt.title("Diagnosis Class Distribution (B = Benign, M = Malignant)")
     plt.show()
 
 
@@ -75,10 +77,12 @@ def plot_correlation_heatmap(df: DataFrame, top_features):
     """
     Plot a correlation heatmap of the features most related to diagnosis.
     """
-    selected_columns = ['Diagnosis'] + list(top_features.index)
+    selected_columns = ['Diagnosis_num'] + list(top_features.index)
 
-    df_corr = df[selected_columns]
-    corr_matrix = df_corr.corr(numeric_only=True)
+    corr_matrix = df[selected_columns].corr(numeric_only=True)
+    
+    corr_matrix = corr_matrix.rename(columns={'Diagnosis_num': 'Diagnosis'},
+                                     index={'Diagnosis_num': 'Diagnosis'})
 
     fig = plt.figure(figsize=(12, 5))
     sns.heatmap(corr_matrix, cmap="coolwarm", annot=False)
@@ -115,29 +119,28 @@ def plot_pair_plot(df: DataFrame, top_features):
     top_feature_names = list(top_features.index[:2])
 
     correlations = (
-        df
-            .corr(numeric_only=True)['Diagnosis']
-            .drop('Diagnosis')
-            .abs()
-    )
-    
-    low_features = list(
-        correlations
-            .drop(top_feature_names)
-            .sort_values(ascending=True)
-            .head(2)
-            .index
+        df.corr(numeric_only=True)['Diagnosis_num']
+        .drop('Diagnosis_num')
+        .abs()
     )
 
-    selected_columns = top_feature_names + low_features + ['Diagnosis']
+    low_features = list(
+        correlations
+        .drop(top_feature_names)
+        .sort_values(ascending=True)
+        .head(2)
+        .index
+    )
+
+    selected_columns = top_feature_names + low_features + ['Diagnosis_raw']
 
     plot = sns.pairplot(
         df[selected_columns],
+        hue="Diagnosis_raw",
         height=2.5,
-        aspect = 1.5,
-        palette='Set2',
-        hue="Diagnosis"
+        aspect=1.5
     )
+
     plot.figure.canvas.mpl_connect('key_press_event', close_on_key)
     plt.suptitle("Feature Pairplot (subset)", y=1.02)
     plt.show()
@@ -147,6 +150,9 @@ def plot_split_distribution(y_train, y_val):
     """
     Plot the distribution of the diagnosis in the train and validation datasets.
     """
+    y_train = pd.Series(y_train).map({1: 'M', 0: 'B'})
+    y_val = pd.Series(y_val).map({1: 'M', 0: 'B'})
+
     split_data = pd.DataFrame({
         'Diagnosis': list(y_train) + list(y_val),
         'Split': ['Train'] * len(y_train) + ['Validation'] * len(y_val)
@@ -158,7 +164,6 @@ def plot_split_distribution(y_train, y_val):
     plt.title("Class Distribution in Train vs Validation")
     plt.xlabel("Dataset Split")
     plt.ylabel("Count")
-    plt.legend(title="Diagnosis", labels=["Benign (0)", "Malignant (1)"])
     plt.tight_layout()
     plt.show()
 
@@ -203,8 +208,8 @@ def split_dataset(df: DataFrame, test_size=0.2):
     """
     Split the dataset into train and validation datasets.
     """
-    X = df.drop(columns=['Diagnosis'])
-    y = df['Diagnosis']
+    X = df.drop(columns=['Diagnosis', 'Diagnosis_raw', 'Diagnosis_num'])
+    y = df['Diagnosis_num']
 
     X_train, X_val, y_train, y_val = train_test_split_custom(
         X, y, test_size=test_size, random_state=42
@@ -220,19 +225,33 @@ def save_split_dataset(X_train, X_val, y_train, y_val):
     """
     Save the train and validation datasets into .csv files.
     """
-    train_df = X_train.copy()
-    train_df["Diagnosis"] = y_train
-
-    val_df = X_val.copy()
-    val_df["Diagnosis"] = y_val
-
     os.makedirs("datasets", exist_ok=True)
-    train_df.to_csv(os.path.join("datasets", "train.csv"), index=False)
-    val_df.to_csv(os.path.join("datasets", "val.csv"), index=False)
+
+    def build_df(X, y):
+        df = X.copy()
+
+        # convert back to label
+        y = pd.Series(y).map({1: 'M', 0: 'B'}).values
+
+        # insert as SECOND column (after Id if exists)
+        if 'Id' in df.columns:
+            cols = df.columns.tolist()
+            cols.remove('Id')
+            df = df[['Id'] + cols]
+
+        df.insert(1, 'Diagnosis', y)
+
+        return df
+
+    train_df = build_df(X_train, y_train)
+    val_df = build_df(X_val, y_val)
+
+    train_df.to_csv("datasets/train.csv", index=False, header=False)
+    val_df.to_csv("datasets/test.csv", index=False, header=False)
 
 
 if __name__ == "__main__":
-    try:
+    # try:
         if len(sys.argv) == 2:
             data_path = sys.argv[1]
         else:
@@ -268,5 +287,5 @@ if __name__ == "__main__":
 
         plot_split_distribution(y_train, y_val)
 
-    except Exception as e:
-        print(f"Error: {e}")
+    # except Exception as e:
+    #     print(f"Error: {e}")
