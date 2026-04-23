@@ -5,7 +5,7 @@ import copy
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils.utils import plot_loss_and_accuracy, display_bonus_metrics, display_history
+from utils.utils import COLOR, plot_loss_and_accuracy, display_bonus_metrics, display_history
 from utils.metrics import *
 
 class MLP:
@@ -169,9 +169,9 @@ class MLP:
         y_val_oh = one_hot_encoder(y_val, 2)
 
         # Early stopping and Nesterov Optimization variables
-        min_delta = 1e-4
+        min_delta = 1e-6
         patience_counter = 0
-        best_loss = float('inf')
+        best_f1 = 0
         best_weights = copy.deepcopy(self.weights)
         best_biases = copy.deepcopy(self.biases)
         self.velocities_w = [np.zeros_like(w) for w in self.weights]
@@ -196,35 +196,35 @@ class MLP:
             self.val_f1_scores.append(val_metrics["f1"])
 
             if patience is not None:
-                if val_metrics["loss"] < best_loss - min_delta:
-                    best_loss = val_metrics["loss"]
+                if val_metrics["f1"] > best_f1:
+                    best_f1 = val_metrics["f1"]
                     best_weights = copy.deepcopy(self.weights)
                     best_biases = copy.deepcopy(self.biases)
+                    best_epoch = epoch
                     patience_counter = 0
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
                         self.weights = best_weights
                         self.biases = best_biases
-                        print(f"Early stopping at epoch {epoch + 1}. Restored best validation-loss weights.")
+                        print(f"Early stopping at {COLOR.BOLD}epoch {epoch + 1}{COLOR.RESET}. Restored best validation-F1 weights.")
                         break
 
             print(
-                f"Epoch: {epoch + 1}/{epochs}"
-                f" - loss: {train_metrics['loss']:.4f}"
-                f" - val_loss: {val_metrics['loss']:.4f}"
-                f" - accuracy: {train_metrics['accuracy']:.4f}"
-                f" - val_accuracy: {val_metrics['accuracy']:.4f}"
-                f" - precision: {val_metrics['precision']:.4f}"
-                f" - recall: {val_metrics['recall']:.4f}"
-                f" - f1: {val_metrics['f1']:.4f}"
+                f"{COLOR.YELLOW}Epoch {epoch+1}/{epochs}{COLOR.RESET} | "
+                f"{COLOR.BOLD}train{COLOR.RESET}: "
+                f"{COLOR.BLUE}loss {train_metrics['loss']:.4f}{COLOR.RESET}, "
+                f"{COLOR.GREEN}acc {train_metrics['accuracy']:.4f}{COLOR.RESET} | "
+                f"{COLOR.BOLD}val{COLOR.RESET}: "
+                f"{COLOR.BLUE}loss {val_metrics['loss']:.4f}{COLOR.RESET}, "
+                f"{COLOR.GREEN}acc {val_metrics['accuracy']:.4f}{COLOR.RESET}, "
+                f"{COLOR.CYAN}f1 {val_metrics['f1']:.4f}{COLOR.RESET}"
             )
 
         if patience is not None and self.val_losses:
-            best_epoch = int(np.argmin(self.val_losses))
             self.weights = best_weights
             self.biases = best_biases
-            print(f"Best validation loss kept from epoch {best_epoch + 1}.")
+            print(f"{COLOR.GREEN}Best validation F1 kept from epoch {best_epoch + 1}.{COLOR.RESET}")
 
         plot_loss_and_accuracy(self.train_losses, self.train_accuracies, self.val_losses, self.val_accuracies)
 
