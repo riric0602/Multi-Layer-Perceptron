@@ -61,8 +61,8 @@ def get_train_validation_sets():
     Retrieve training and validation sets.
     """
 
-    train_path = os.path.join("datasets", "data_test.csv")
-    val_path = os.path.join("datasets", "data_training.csv")
+    train_path = "data_test.csv"
+    val_path = "data_training.csv"
     
     if os.path.exists(train_path) and os.path.exists(val_path):
 

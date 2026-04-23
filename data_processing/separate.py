@@ -246,8 +246,8 @@ def save_split_dataset(X_train, X_val, y_train, y_val):
     train_df = build_df(X_train, y_train)
     val_df = build_df(X_val, y_val)
 
-    train_df.to_csv("datasets/data_training.csv", index=False, header=False)
-    val_df.to_csv("datasets/data_test.csv", index=False, header=False)
+    train_df.to_csv("data_training.csv", index=False, header=False)
+    val_df.to_csv("data_test.csv", index=False, header=False)
 
 
 if __name__ == "__main__":

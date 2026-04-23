@@ -8,11 +8,11 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from training.MLP import MLP
-from data_processing.separate import preprocess_dataset, COLUMN_NAMES
+from data_processing.separate import COLUMN_NAMES
 from utils.utils import COLOR, pct, c, load_model
 
 
-TEST_FILE = "datasets/data_test.csv"
+TEST_FILE = "data_test.csv"
 
 
 def read_and_scale_data(mean, std):
