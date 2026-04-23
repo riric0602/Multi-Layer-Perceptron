@@ -123,6 +123,25 @@ def load_model(filepath):
     return weights, biases, activations, scaler_mean, scaler_std, train_losses, val_losses, train_accuracies, val_accuracies
 
 
+def pct(x):
+    return f"{x * 100:.5f}%"
+
+
+def print_metrics_block(title, metrics, color):
+    print(f"\n{c(f'=== {title} ===', color)}")
+    print(f"{c('Accuracy', COLOR.GREEN)}:  {pct(metrics['accuracy'])}")
+    print(f"{c('Precision', COLOR.CYAN)}: {pct(metrics['precision'])}")
+    print(f"{c('Recall', COLOR.CYAN)}:    {pct(metrics['recall'])}")
+    print(f"{c('F1', COLOR.CYAN)}:        {pct(metrics['f1'])}")
+    print(f"{c('Loss', COLOR.YELLOW)}:      {metrics['loss']:.6f}")
+
+
+def print_confusion(title, tp, tn, fp, fn, color):
+    print(f"\n{c(f'=== {title} Confusion Matrix ===', color)}")
+    print(f"{c('TP', COLOR.GREEN)}: {tp} | {c('FP', COLOR.RED)}: {fp}")
+    print(f"{c('FN', COLOR.RED)}: {fn} | {c('TN', COLOR.GREEN)}: {tn}")
+
+
 def display_bonus_metrics(model, X_train, y_train, X_val, y_val):
     """
     Display the bonus metrics of the model.
@@ -133,39 +152,24 @@ def display_bonus_metrics(model, X_train, y_train, X_val, y_val):
     train_metrics = classification_metrics(model, X_train, y_train)
     val_metrics = classification_metrics(model, X_val, y_val)
 
-    #  Train and Validation Confusion matrix
-    tp_train, tn_train, fp_train, fn_train = train_metrics["tp"], train_metrics["tn"], train_metrics["fp"], train_metrics["fn"]
-    tp_val, tn_val, fp_val, fn_val = val_metrics["tp"], val_metrics["tn"], val_metrics["fp"], val_metrics["fn"]
+    # Confusion matrix
+    tp, tn, fp, fn = train_metrics["tp"], train_metrics["tn"], train_metrics["fp"], train_metrics["fn"]
+    print_confusion("Train", tp, tn, fp, fn, COLOR.BOLD)
 
-    print("\nTrain Confusion matrix:")
-    print(f"[{tp_train}, {fp_train}\n{fn_train}, {tn_train}]\n")
+    tp, tn, fp, fn = val_metrics["tp"], val_metrics["tn"], val_metrics["fp"], val_metrics["fn"]
+    print_confusion("Validation", tp, tn, fp, fn, COLOR.BOLD)
 
-    print("Validation Confusion matrix:")
-    print(f"[{tp_val}, {fp_val}\n{fn_val}, {tn_val}]\n")
+    # Metrics
+    print_metrics_block("Train Metrics", train_metrics, COLOR.BOLD)
+    print_metrics_block("Validation Metrics", val_metrics, COLOR.BOLD)
 
-    # Compute Precision of model
-    train_precision = train_metrics["precision"]
-    val_precision = val_metrics["precision"]
-    print(f"\nTrain Precision: {train_precision}")
-    print(f"Validation Precision: {val_precision}")
-
-    # Compute Recall of model
-    train_recall = train_metrics["recall"]
-    val_recall = val_metrics["recall"]
-    print(f"\nTrain Recall: {train_recall}")
-    print(f"Validation Recall: {val_recall}")
-
-    # Compute F1 of model
-    train_f1 = train_metrics["f1"]
-    val_f1 = val_metrics["f1"]
-    print(f"\nTrain F1: {train_f1}")
-    print(f"Validation F1: {val_f1}")
-
-    # Compute MSE of model
+    # MSE
     train_mse = mse(model, X_train, y_train_oh)
     val_mse = mse(model, X_val, y_val_oh)
-    print(f"\nTrain MSE: {train_mse}")
-    print(f"Validation MSE: {val_mse}")
+
+    print(f"\n{c('=== MSE ===', COLOR.BOLD)}")
+    print(f"{c('Train MSE', COLOR.BLUE)}: {train_mse:.6f}")
+    print(f"{c('Val MSE', COLOR.MAGENTA)}:   {val_mse:.6f}")
 
 
 def display_history(model):
@@ -190,13 +194,13 @@ def display_history(model):
     max_val_recall = max(model.val_recalls)
     max_val_recall_epoch = model.val_recalls.index(max_val_recall) + 1
 
-    print("\n=== Training Metrics ===")
-    print(f"Minimum Train Loss: {min_train_loss:.4f} at epoch {min_train_loss_epoch}")
-    print(f"Maximum Train Accuracy: {max_train_acc:.4f} at epoch {max_train_acc_epoch}\n")
+    print(f"\n{c('=== TRAINING HISTORY ===', COLOR.BOLD)}")
+    print(f"{c('Min Loss:', COLOR.YELLOW)} {min_train_loss:.4f} {c('(epoch ' + str(min_train_loss_epoch) + ')', COLOR.DIM)}")
+    print(f"{c('Max Accuracy:', COLOR.GREEN)} {pct(max_train_acc)} {c('(epoch ' + str(max_train_acc_epoch) + ')', COLOR.DIM)}")
 
-    print("\n=== Validation Metrics ===")
-    print(f"Minimum Validation Loss: {min_val_loss:.4f} at epoch {min_val_loss_epoch}")
-    print(f"Maximum Validation Accuracy: {max_val_acc:.4f} at epoch {max_val_acc_epoch}")
-    print(f"Maximum Validation Precision: {max_val_precision:.4f} at epoch {max_val_precision_epoch}")
-    print(f"Maximum Validation Recall: {max_val_recall:.4f} at epoch {max_val_recall_epoch}")
-    print(f"Maximum Validation F1: {max_val_f1:.4f} at epoch {max_val_f1_epoch}")
+    print(f"\n{c('=== VALIDATION HISTORY ===', COLOR.BOLD)}")
+    print(f"{c('Min Loss:', COLOR.YELLOW)} {min_val_loss:.4f} {c('(epoch ' + str(min_val_loss_epoch) + ')', COLOR.DIM)}")
+    print(f"{c('Max Accuracy:', COLOR.GREEN)} {pct(max_val_acc)} {c('(epoch ' + str(max_val_acc_epoch) + ')', COLOR.DIM)}")
+    print(f"{c('Max Precision:', COLOR.CYAN)} {pct(max_val_precision)} {c('(epoch ' + str(max_val_precision_epoch) + ')', COLOR.DIM)}")
+    print(f"{c('Max Recall:', COLOR.CYAN)} {pct(max_val_recall)} {c('(epoch ' + str(max_val_recall_epoch) + ')', COLOR.DIM)}")
+    print(f"{c('Max F1:', COLOR.CYAN)} {pct(max_val_f1)} {c('(epoch ' + str(max_val_f1_epoch) + ')', COLOR.DIM)}")
