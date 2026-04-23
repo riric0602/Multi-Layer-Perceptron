@@ -12,25 +12,21 @@ from data_processing.separate import preprocess_dataset, COLUMN_NAMES
 from utils.utils import COLOR, pct, c, load_model
 
 
-DATA_FILE = "datasets/data.csv"
+TEST_FILE = "datasets/data_test.csv"
 
 
 def read_and_scale_data(mean, std):
     """
     Read and scale the given dataset to be predicted.
     """
-    df = pd.read_csv(DATA_FILE, names=COLUMN_NAMES, header=0)
-    dataset = preprocess_dataset(df)
+    df = pd.read_csv(TEST_FILE, names=COLUMN_NAMES, header=0)
+    
+    y = df.iloc[:, 1].map({"M": 1, "B": 0}).values
+    X = df.iloc[:, 2:].values.astype(np.float32)
 
-    X = dataset.drop(columns=['Diagnosis']).values.astype(np.float32)
-    y = dataset['Diagnosis'].values.reshape(-1, 1)
-
-    mean = np.array(mean)
-    std = np.array(std)
+    mean = np.array(mean).reshape(1, -1)
+    std = np.array(std).reshape(1, -1)
     std = np.where(std == 0, 1.0, std)
-
-    mean = mean.flatten()
-    std = std.flatten()
 
     X_scaled = (X - mean) / std
 
@@ -70,7 +66,6 @@ if __name__ == "__main__":
         model = MLP(input_size=weights[0].shape[0])
 
         # Assign loaded weights and biases to the model
-        model = MLP(input_size=weights[0].shape[0])
         model.weights = weights
         model.biases = biases
         model.activation_funcs = activations

@@ -165,8 +165,10 @@ class MLP:
         Main training function for the neural network in the MLP object.
         """
         # One hot encode the true results
+        if isinstance(y_train[0], str):
+            y_train = np.array([1 if y == "M" else 0 for y in y_train])
+
         y_train_oh = one_hot_encoder(y_train, 2)
-        y_val_oh = one_hot_encoder(y_val, 2)
 
         # Early stopping and Nesterov Optimization variables
         min_delta = 1e-6
