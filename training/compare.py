@@ -56,9 +56,12 @@ if __name__ == "__main__":
             print("Usage: python compare.py model1_path model2_path")
             sys.exit(1)
 
+        model_1_path = f"models/{sys.argv[1]}.json"
+        model_2_path = f"models/{sys.argv[2]}.json"
+
         # Load the 2 models' history to compare
-        _, _, _, _, _, train_losses_1, val_losses_1, train_accuracies_1, val_accuracies_1 = load_model(sys.argv[1])
-        _, _, _, _, _, train_losses_2, val_losses_2, train_accuracies_2, val_accuracies_2 = load_model(sys.argv[2])
+        _, _, _, _, _, train_losses_1, val_losses_1, train_accuracies_1, val_accuracies_1 = load_model(model_1_path)
+        _, _, _, _, _, train_losses_2, val_losses_2, train_accuracies_2, val_accuracies_2 = load_model(model_2_path)
 
         history_1 = {
             "loss": train_losses_1,
